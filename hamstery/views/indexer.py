@@ -1,8 +1,8 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from .serializers import TorznabIndexerSerializer
 from rest_framework.response import Response
-from .models import TorznabIndexer
+from ..serializers import TorznabIndexerSerializer
+from ..models.indexer import TorznabIndexer
 
 # Create your views here.
 
