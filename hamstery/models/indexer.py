@@ -9,13 +9,12 @@ class TorznabIndexer(models.Model):
     url = models.CharField(max_length=1024)
     apikey = models.CharField(max_length=128)
 
-    @staticmethod
-    def search(indexer, query=''):
-        print('search "%s" via "%s"' % (query, indexer.name))
+    def search(self, query=''):
+        print('search "%s" via "%s"' % (query, self.name))
         try:
-            r = requests.get(indexer.url, params={'apikey': indexer.apikey, 'q': query, 't': 'tvsearch', 'cat': '',})
+            r = requests.get(self.url, params={'apikey': self.apikey, 'q': query, 't': 'tvsearch', 'cat': '',})
             if r.status_code != 200:
-                return {'success': False, 'errors': 'Indexer %s(%s): HTTP %d %s' % (indexer.name, indexer.url, r.status_code, r.reason)}
+                return {'success': False, 'errors': 'Indexer %s(%s): HTTP %d %s' % (self.name, self.url, r.status_code, r.reason)}
             tree = ElementTree.fromstring(r.content)
             if tree.tag == "error":
                 return {'success': False, 'errors': tree.get('description')}

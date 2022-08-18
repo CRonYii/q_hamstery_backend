@@ -14,7 +14,7 @@ class TorznabIndexerView(viewsets.ModelViewSet):
     def search(self, request, pk=None):
         indexer: TorznabIndexer = self.get_object()
         query = request.GET['query'] if 'query' in request.GET else ''
-        result = TorznabIndexer.search(indexer, query)
+        result = indexer.search(query)
         if result['success'] is True:
             return Response(result['data'])
         else:
