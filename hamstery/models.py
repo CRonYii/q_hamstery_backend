@@ -1,4 +1,6 @@
 from django.db import models
+import requests
+from xml.etree import ElementTree
 
 # Create your models here.
 
@@ -6,3 +8,31 @@ class TorznabIndexer(models.Model):
     name = models.CharField(max_length=120)
     url = models.CharField(max_length=1024)
     apikey = models.CharField(max_length=128)
+
+    @staticmethod
+    def search(indexer, query=''):
+        print('search "%s" via "%s"' % (query, indexer.name))
+        try:
+            r = requests.get(indexer.url, params={'apikey': indexer.apikey, 'q': query, 't': 'tvsearch', 'cat': '',})
+            if r.status_code != 200:
+                return {'success': False, 'errors': 'Indexer %s(%s): HTTP %d %s' % (indexer.name, indexer.url, r.status_code, r.reason)}
+            tree = ElementTree.fromstring(r.content)
+            if tree.tag == "error":
+                return {'success': False, 'errors': tree.get('description')}
+            channel = tree[0]
+            torrents = []
+            for item in channel.iter('item'):
+                try:
+                    torrent = {
+                        'title' : item.find('title').text,
+                        'link' : item.find('link').text,
+                        'size' : item.find('size').text,
+                        'pub_date' : item.find('pubDate').text
+                    }
+                    torrents.append(torrent)
+                except:
+                    continue
+            
+            return {'success': True, 'data': torrents}
+        except requests.exceptions.RequestException as e:
+            return {'success': False, 'errors': str(e)}
