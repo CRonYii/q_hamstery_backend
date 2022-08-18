@@ -1,7 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from ..utils import HamsteryResponse
 from ..serializers import TorznabIndexerSerializer
 from ..models.indexer import TorznabIndexer
 
@@ -16,4 +15,4 @@ class TorznabIndexerView(viewsets.ModelViewSet):
         indexer: TorznabIndexer = self.get_object()
         query = request.GET['query'] if 'query' in request.GET else ''
         result = indexer.search(query)
-        return HamsteryResponse(result)
+        return result.into_response()

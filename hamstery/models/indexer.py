@@ -2,7 +2,7 @@ from django.db import models
 import requests
 from xml.etree import ElementTree
 
-from ..utils import failure, success
+from ..utils import Result, failure, success
 
 # Create your models here.
 
@@ -11,7 +11,7 @@ class TorznabIndexer(models.Model):
     url = models.CharField(max_length=1024)
     apikey = models.CharField(max_length=128)
 
-    def search(self, query=''):
+    def search(self, query='') -> Result:
         print('search "%s" via "%s"' % (query, self.name))
         try:
             r = requests.get(self.url, params={'apikey': self.apikey, 'q': query, 't': 'tvsearch', 'cat': '',})
