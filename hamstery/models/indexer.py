@@ -2,6 +2,8 @@ from django.db import models
 import requests
 from xml.etree import ElementTree
 
+from ..utils import failure, success
+
 # Create your models here.
 
 class TorznabIndexer(models.Model):
@@ -14,10 +16,10 @@ class TorznabIndexer(models.Model):
         try:
             r = requests.get(self.url, params={'apikey': self.apikey, 'q': query, 't': 'tvsearch', 'cat': '',})
             if r.status_code != 200:
-                return {'success': False, 'errors': 'Indexer %s(%s): HTTP %d %s' % (self.name, self.url, r.status_code, r.reason)}
+                return failure('Indexer %s(%s): HTTP %d %s' % (self.name, self.url, r.status_code, r.reason))
             tree = ElementTree.fromstring(r.content)
             if tree.tag == "error":
-                return {'success': False, 'errors': tree.get('description')}
+                return failure(tree.get('description'))
             channel = tree[0]
             torrents = []
             for item in channel.iter('item'):
@@ -32,6 +34,6 @@ class TorznabIndexer(models.Model):
                 except:
                     continue
             
-            return {'success': True, 'data': torrents}
+            return success(torrents)
         except requests.exceptions.RequestException as e:
-            return {'success': False, 'errors': str(e)}
+            return failure(str(e))

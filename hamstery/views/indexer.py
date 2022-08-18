@@ -1,6 +1,7 @@
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
+
+from ..utils import HamsteryResponse
 from ..serializers import TorznabIndexerSerializer
 from ..models.indexer import TorznabIndexer
 
@@ -15,7 +16,4 @@ class TorznabIndexerView(viewsets.ModelViewSet):
         indexer: TorznabIndexer = self.get_object()
         query = request.GET['query'] if 'query' in request.GET else ''
         result = indexer.search(query)
-        if result['success'] is True:
-            return Response(result['data'])
-        else:
-            return Response(result['errors'], status=status.HTTP_400_BAD_REQUEST)
+        return HamsteryResponse(result)
