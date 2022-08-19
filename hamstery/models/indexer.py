@@ -15,7 +15,7 @@ class TorznabIndexer(models.Model):
         print('search "%s" via "%s"' % (query, self.name))
         try:
             r = requests.get(self.url, params={'apikey': self.apikey, 'q': query, 't': 'tvsearch', 'cat': '',})
-            if r.status_code != 200:
+            if not r.ok:
                 return failure('Indexer %s(%s): HTTP %d %s' % (self.name, self.url, r.status_code, r.reason))
             tree = ElementTree.fromstring(r.content)
             if tree.tag == "error":

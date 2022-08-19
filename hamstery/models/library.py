@@ -4,6 +4,7 @@ from typing import Sequence
 from django.db import models
 import os
 import re
+from datetime import datetime
 
 from ..tmdb import tmdb_search_tv_shows, tmdb_tv_season_details, tmdb_tv_show_details
 from ..utils import failure, list_dir, success, validate_directory_exist, value_or
@@ -80,12 +81,14 @@ class TvStorage(models.Model):
 class TvShowManager(models.Manager):
     SEASON_FOLDER_RE = re.compile(r'(?i:season)\s+(\d{1,2})')
 
-    def create_or_update_by_tmdb_id(self, storage: TvStorage, tmdb_id, dirpath):
+    def create_or_update_by_tmdb_id(self, storage: TvStorage, tmdb_id, dirpath=''):
         res = tmdb_tv_show_details(tmdb_id, lang=storage.lib.lang)
         if not res.success:
             return res
         details = res.payload
         name = details['name']
+        air_date = details['first_air_date']
+        air_date = datetime.strptime(air_date, '%Y-%m-%d')
         number_of_episodes = details['number_of_episodes']
         number_of_seasons = details['number_of_seasons']
         poster_path = value_or(details, 'poster_path', '')
@@ -98,6 +101,9 @@ class TvShowManager(models.Manager):
             show.poster_path = poster_path
         except TvShow.DoesNotExist:
             # or create
+            if dirpath == '':
+                dirpath = os.path.join(storage.path, '%s (%d)' % (name, air_date.year))
+                os.mkdir(dirpath)
             show = TvShow(
                 storage=storage,
                 tmdb_id=tmdb_id,
