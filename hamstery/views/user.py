@@ -1,25 +1,24 @@
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
+
+from hamstery.utils import JSON, POST, validate_params
 
 from ..forms import LoginForm
 
 @csrf_exempt
+@POST
+@JSON
+@validate_params(LoginForm)
 def login_view(request):
-    if request.method == 'POST':
-        form = LoginForm(request.POST)
-        if not form.is_valid():
-            print(form.errors.items())
-            return JsonResponse(dict(form.errors.items()), status=400)
-        username = form.cleaned_data['username']
-        password = form.cleaned_data['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return HttpResponse('Ok')
-        else:
-            return HttpResponseBadRequest('Invalid credentials')
-    return HttpResponseNotFound()
+    username = request.data['username']
+    password = request.data['password']
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        login(request, user)
+        return HttpResponse('Ok')
+    else:
+        return HttpResponseBadRequest('Invalid credentials')
 
 
 def logout_view(request):

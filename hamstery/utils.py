@@ -1,4 +1,8 @@
+import json
+from django import forms
+from django.http import JsonResponse, HttpResponseNotFound
 from typing import Sequence
+from functools import wraps
 from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
@@ -56,3 +60,52 @@ def success(data):
 
 def failure(errors):
     return Result(False, errors)
+
+
+def JSON(api):
+    @wraps(api)
+    def _wrapped_api(request, *args, **kwargs):
+        if request.method == 'POST' and request.content_type == 'application/json':
+            request.JSON = json.loads(request.body)
+        return api(request, *args, **kwargs)
+    return _wrapped_api
+
+
+def GET(api):
+    @wraps(api)
+    def _wrapped_api(request, *args, **kwargs):
+        if request.method == 'GET':
+            return api(request, *args, **kwargs)
+        return HttpResponseNotFound()
+    return _wrapped_api
+
+
+def POST(api):
+    @wraps(api)
+    def _wrapped_api(request, *args, **kwargs):
+        if request.method == 'POST':
+            return api(request, *args, **kwargs)
+        return HttpResponseNotFound()
+    return _wrapped_api
+
+
+def validate_params(Form: forms.Form):
+    def _wrapped_api(api):
+        @wraps(api)
+        def _wrapped_wrapped_api(request, *args, **kwargs):
+            form = None
+            if request.method == 'GET':
+                form = Form(request.GET)
+            elif request.method == 'POST':
+                if request.content_type == 'application/json' and request.JSON is not None:
+                    form = Form(request.JSON)
+                else:
+                    form = Form(request.POST)
+            if form is None:
+                return JsonResponse('No payload', status=400)
+            if form.is_valid() is False:
+                return JsonResponse(dict(form.errors.items()), status=400)
+            request.data = form.cleaned_data
+            return api(request, *args, **kwargs)
+        return _wrapped_wrapped_api
+    return _wrapped_api
