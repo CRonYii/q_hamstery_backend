@@ -1,10 +1,8 @@
-from posixpath import dirname
-from statistics import mode
 from typing import Sequence
 from django.db import models
-import os
-import re
+import os, re, asyncio
 from datetime import datetime
+from asgiref.sync import async_to_sync, sync_to_async
 
 from ..tmdb import tmdb_search_tv_shows, tmdb_tv_season_details, tmdb_tv_show_details
 from ..utils import failure, list_dir, success, validate_directory_exist, value_or
@@ -18,11 +16,16 @@ class TvLibrary(models.Model):
     ]
     lang = models.CharField(max_length=2, choices=TMDB_LANG, default='xx')
 
-    def scan(self):
+    @async_to_sync
+    async def scan(self):
         res = success('Ok')
         storages: Sequence[TvStorage] = self.storages.all()
-        for storage in storages:
-            res.agg(storage.scan())
+        routines = []
+        async for storage in storages:
+            routines.append(storage.scan())
+        results = await asyncio.gather(*routines)
+        for r in results:
+            res = res.agg(r)
         return res
 
     def __str__(self):
@@ -36,42 +39,33 @@ class TvStorage(models.Model):
                             validate_directory_exist])
     scanning = models.BooleanField(default=False)
 
-    def scan(self):
+    async def scan(self):
         res = success('Ok')
         if self.scanning is True:
             return res
         self.scanning = True
-        self.save()
+        await sync_to_async(self.save)()
         try:
             print('scan storage', self.path)
-            for show in self.shows.all():
+            async for show in self.shows.all():
                 if not os.path.isdir(show.path):
-                    show.delete()
+                    await sync_to_async(show.delete)()
+            routines = []
             for (dirpath, dir) in list_dir(self.path):
                 try:
-                    print('scan show', dirpath, dir)
-                    # Find the best matched tv show via tmdb
-                    [name, year] = TvShowManager.get_title_and_year(dir)
-                    tmdb_res = tmdb_search_tv_shows(
-                        query=name, lang=self.lib.lang, year=year)
-                    if not tmdb_res.success:
-                        res.agg(tmdb_res)
-                    shows = tmdb_res.payload
-                    if shows['total_results'] == 0:
-                        continue
-                    show_data = shows['results'][0]
-                    tmdb_id = show_data['id']
-                    TvShow.objects.create_or_update_by_tmdb_id(
-                        self, tmdb_id, os.path.join(dirpath, dir))
+                    routines.append(TvShow.objects.scan_for_show(self, dirpath, dir))
                 except Exception as e:
+                    import traceback
+                    print(traceback.format_exc())
                     res.agg(failure('Failed to scan show directory %s: %s' %
                             (os.path.join(dirpath, dir), str(e))))
+            await asyncio.gather(*routines)
         except Exception as e:
             res.agg(failure('Failed to scan storage %s: %s' %
                     (self.path, str(e))))
         finally:
             self.scanning = False
-            self.save()
+            await sync_to_async(self.save)()
             return res
 
     def __str__(self):
@@ -81,8 +75,8 @@ class TvStorage(models.Model):
 class TvShowManager(models.Manager):
     SEASON_FOLDER_RE = re.compile(r'(?i:season)\s+(\d{1,2})')
 
-    def create_or_update_by_tmdb_id(self, storage: TvStorage, tmdb_id, dirpath=''):
-        res = tmdb_tv_show_details(tmdb_id, lang=storage.lib.lang)
+    async def create_or_update_by_tmdb_id(self, storage: TvStorage, tmdb_id, dirpath=''):
+        res = await tmdb_tv_show_details(tmdb_id, lang=storage.lib.lang)
         if not res.success:
             return res
         details = res.payload
@@ -94,7 +88,7 @@ class TvShowManager(models.Manager):
         poster_path = value_or(details, 'poster_path', '')
         try:
             # update
-            show: TvShow = storage.shows.get(path=dirpath)
+            show: TvShow = await storage.shows.aget(path=dirpath)
             show.name = name
             show.number_of_episodes = number_of_episodes
             show.number_of_seasons = number_of_seasons
@@ -113,9 +107,9 @@ class TvShowManager(models.Manager):
                 number_of_seasons=number_of_seasons,
                 poster_path=poster_path,
             )
-        show.save()
+        await sync_to_async(show.save)()
         seasons = details['seasons']
-        show.scan_seasons(seasons)
+        await show.scan_seasons(seasons)
         
 
     TITLE_YEAR_REGEX = re.compile(r'(.*?)\s*\((\d{4})\)?')
@@ -127,6 +121,24 @@ class TvShowManager(models.Manager):
             return [match.group(1), match.group(2)]
         else:
             return [name, None]
+
+    
+    async def scan_for_show(self, storage: TvStorage, dirpath, dir):
+        print('scan show', dirpath, dir)
+        # Find the best matched tv show via tmdb
+        [name, year] = TvShowManager.get_title_and_year(dir)
+        tmdb_res = await tmdb_search_tv_shows(
+            query=name, lang=storage.lib.lang, year=year)
+        if not tmdb_res.success:
+            return tmdb_res
+        shows = tmdb_res.payload
+        if shows['total_results'] == 0:
+            return failure('Not found in TMDB')
+        show_data = shows['results'][0]
+        tmdb_id = show_data['id']
+        await TvShow.objects.create_or_update_by_tmdb_id(
+            storage, tmdb_id, os.path.join(dirpath, dir))
+        return success('Ok')
 
 
 class TvShow(models.Model):
@@ -156,26 +168,28 @@ class TvShow(models.Model):
         return season_map
 
 
-    def scan_seasons(self, seasons):
+    async def scan_seasons(self, seasons):
         # clear removed seasons
-        for season in self.seasons.all():
+        async for season in self.seasons.all():
             if not os.path.isdir(season.path):
-                    season.delete()
+                await sync_to_async(season.delete)()
         # scan seasons based on show's dir tree
         season_map = self.get_season_to_dir_map()
+        routines = []
         for season in seasons:
             season_number = season['season_number']
             path = season_map.get(season_number, '')
-            TvSeason.objects.create_or_update_by_tmdb_id(
-                self, self.tmdb_id, season_number, path)
+            routines.append(TvSeason.objects.create_or_update_by_tmdb_id(
+                self, self.tmdb_id, season_number, path))
+        await asyncio.gather(*routines)
 
     def __str__(self):
         return self.name
 
 
 class TvSeasonManager(models.Manager):
-    def create_or_update_by_tmdb_id(self, show: TvShow, tv_tmdb_id, season_number, dirpath=''):
-        res = tmdb_tv_season_details(
+    async def create_or_update_by_tmdb_id(self, show: TvShow, tv_tmdb_id, season_number, dirpath=''):
+        res = await tmdb_tv_season_details(
             tv_tmdb_id, season_number, lang=show.storage.lib.lang)
         if not res.success:
             return res
@@ -188,7 +202,7 @@ class TvSeasonManager(models.Manager):
         air_date = value_or(details, 'air_date', '')
         try:
             # update
-            season: TvSeason = show.seasons.get(path=dirpath)
+            season: TvSeason = await show.seasons.aget(path=dirpath)
             season.tmdb_id = tmdb_id
             season.name = name
             season.number_of_episodes = number_of_episodes
@@ -209,8 +223,8 @@ class TvSeasonManager(models.Manager):
                 poster_path=poster_path,
                 air_date=air_date,
             )
-        season.save()
-        season.scan_episodes(episodes)
+        await sync_to_async(season.save)()
+        await season.scan_episodes(episodes)
 
 
 class TvSeason(models.Model):
@@ -239,17 +253,17 @@ class TvSeason(models.Model):
         return episode_map
 
 
-    def scan_episodes(self, episodes):
+    async def scan_episodes(self, episodes):
         # We should not need to worry about clearing episodes unless # of episodes is reduced (which is unlikely)
         episode_map = self.get_episode_to_dir_map()
         for episode in episodes:
             episode_number = episode['episode_number']
             path = episode_map.get(episode_number, '')
-            TvEpisode.objects.create_or_update_by_episode_number(season=self, details=episode, dirpath=path)
+            await TvEpisode.objects.create_or_update_by_episode_number(season=self, details=episode, dirpath=path)
             
 
 class TvEpisodeManager(models.Manager):
-    def create_or_update_by_episode_number(self, season: TvSeason, details, dirpath=''):
+    async def create_or_update_by_episode_number(self, season: TvSeason, details, dirpath=''):
         episode_number = details['episode_number']
         tmdb_id = details['id']
         name = details['name']
@@ -260,7 +274,7 @@ class TvEpisodeManager(models.Manager):
 
         try:
             # update
-            episode: TvEpisode = season.episodes.get(episode_number=episode_number)
+            episode: TvEpisode = await season.episodes.aget(episode_number=episode_number)
             episode.tmdb_id = tmdb_id
             episode.name = name
             episode.season_number = season_number
@@ -286,7 +300,7 @@ class TvEpisodeManager(models.Manager):
                 poster_path=poster_path,
                 air_date=air_date,
             )
-        episode.save()
+        await sync_to_async(episode.save)()
 
 class TvEpisode(models.Model):
     season = models.ForeignKey(

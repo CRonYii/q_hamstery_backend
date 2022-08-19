@@ -1,4 +1,4 @@
-import requests
+import aiohttp
 
 from .utils import Result, failure, success
 
@@ -6,15 +6,16 @@ from .utils import Result, failure, success
 TMDB_API_KEY = 'e0c3646a54719a22df8b8e2c3f2e06ed'
 
 
-def tmdb_api_request(url, params) -> Result:
+async def tmdb_api_request(url, params) -> Result:
     try:
         params['api_key'] = TMDB_API_KEY
-        r = requests.get(url, params=params)
-        res = r.json()
-        if 'success' in res and res['success'] is False:
-            return failure(res['status_message'])
-        return success(res)
-    except requests.exceptions.RequestException as e:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                res = await response.json()
+                if 'success' in res and res['success'] is False:
+                    return failure(res['status_message'])
+                return success(res)
+    except aiohttp.ClientConnectionError as e:
         return failure(str(e))
 
 
