@@ -1,8 +1,11 @@
 from django.db import models
 import requests
+import logging
 from xml.etree import ElementTree
 
 from ..utils import Result, failure, success
+
+logger = logging.getLogger(__name__)
 
 # Create your models here.
 
@@ -12,7 +15,6 @@ class TorznabIndexer(models.Model):
     apikey = models.CharField(max_length=128)
 
     def search(self, query='') -> Result:
-        print('search "%s" via "%s"' % (query, self.name))
         try:
             r = requests.get(self.url, params={'apikey': self.apikey, 'q': query, 't': 'tvsearch', 'cat': '',})
             if not r.ok:
@@ -36,4 +38,5 @@ class TorznabIndexer(models.Model):
             
             return success(torrents)
         except requests.exceptions.RequestException as e:
+            logger.warning(str(e))
             return failure(str(e))

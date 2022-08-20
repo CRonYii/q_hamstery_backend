@@ -133,3 +133,47 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ]
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'backend': {
+            'class': 'logging.FileHandler',
+            'filename': 'backend.log',
+            'encoding':'utf8',
+            'formatter': 'simple',
+        },
+        'hamstery': {
+            'class': 'logging.FileHandler',
+            'filename': 'hamstery.log',
+            'encoding':'utf8',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['backend', 'console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+        'hamstery': {
+            'handlers': ['hamstery', 'console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{name} {levelname} {asctime} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+}
