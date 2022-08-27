@@ -127,7 +127,7 @@ class TvShowManager(models.Manager):
         if match:
             return [match.group(1), match.group(2)]
         else:
-            return [name, None]
+            return [name, '']
 
     async def scan_for_show(self, storage: TvStorage, dirpath, dir):
         logger.info('scan show %s - %s' % (dirpath, dir))
