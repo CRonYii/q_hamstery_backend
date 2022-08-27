@@ -15,11 +15,13 @@ import environ
 
 # Initialise environment variables
 env = environ.Env(
+    HOST=(str, '.localhost'),
     DEBUG=(bool, False),
-    SECRET_KEY=(str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
+    SECRET_KEY=(
+        str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
     QBITTORRENT_USERNAME=(str, ''),
     QBITTORRENT_PASSWORD=(str, ''),
-    )
+)
 environ.Env.read_env('.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,7 +37,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [env('HOST')]
 
 
 # Application definition
@@ -151,13 +153,13 @@ LOGGING = {
         'backend': {
             'class': 'logging.FileHandler',
             'filename': 'app_data/backend.log',
-            'encoding':'utf8',
+            'encoding': 'utf8',
             'formatter': 'simple',
         },
         'hamstery': {
             'class': 'logging.FileHandler',
             'filename': 'app_data/hamstery.log',
-            'encoding':'utf8',
+            'encoding': 'utf8',
             'formatter': 'verbose',
         },
         'console': {
