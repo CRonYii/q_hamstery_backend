@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-import os
 import environ
 
 # Initialise environment variables
@@ -21,7 +20,7 @@ env = environ.Env(
     QBITTORRENT_USERNAME=(str, ''),
     QBITTORRENT_PASSWORD=(str, ''),
     )
-environ.Env.read_env(os.path.join('app_data', '.env'))
+environ.Env.read_env('.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
