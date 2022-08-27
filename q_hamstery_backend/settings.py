@@ -89,7 +89,7 @@ WSGI_APPLICATION = 'q_hamstery_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'app_data' / 'db.sqlite3',
     }
 }
 
@@ -150,13 +150,13 @@ LOGGING = {
     'handlers': {
         'backend': {
             'class': 'logging.FileHandler',
-            'filename': 'backend.log',
+            'filename': 'app_data/backend.log',
             'encoding':'utf8',
             'formatter': 'simple',
         },
         'hamstery': {
             'class': 'logging.FileHandler',
-            'filename': 'hamstery.log',
+            'filename': 'app_data/hamstery.log',
             'encoding':'utf8',
             'formatter': 'verbose',
         },
