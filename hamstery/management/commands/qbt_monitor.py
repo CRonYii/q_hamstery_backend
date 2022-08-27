@@ -20,7 +20,7 @@ class Command(BaseCommand):
             logger.info(
                 f'qBittorrent Web API: {qbt_client.app.web_api_version}')
         except qbittorrentapi.LoginFailed as e:
-            print(e)
+            logger.error(e)
             exit()
         scheduler = BlockingScheduler()
         scheduler.add_job(qbittorrent_monitor_step,
