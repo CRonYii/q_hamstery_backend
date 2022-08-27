@@ -1,3 +1,4 @@
+from fileinput import filename
 import json
 from django import forms
 from django.http import JsonResponse, HttpResponseNotFound
@@ -19,6 +20,11 @@ def validate_directory_exist(dir):
 def list_dir(path) -> Sequence[Sequence[str]]:
     for (dirpath, dirnames, _) in os.walk(path):
         return [[dirpath, dir] for dir in dirnames]
+
+
+def list_file(path) -> Sequence[Sequence[str]]:
+    for (dirpath, _, filenames) in os.walk(path):
+        return [[dirpath, filename] for filename in filenames]
 
 
 class Result:

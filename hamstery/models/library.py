@@ -9,7 +9,7 @@ import traceback
 from asgiref.sync import async_to_sync, sync_to_async
 
 from ..tmdb import tmdb_search_tv_shows, tmdb_tv_season_details, tmdb_tv_show_details
-from ..utils import failure, list_dir, success, validate_directory_exist, value_or
+from ..utils import failure, list_dir, list_file, success, validate_directory_exist, value_or
 
 logger = logging.getLogger(__name__)
 
@@ -244,13 +244,13 @@ class TvSeason(models.Model):
 
     objects: TvSeasonManager = TvSeasonManager()
 
-    EPISODE_NAME_RE = r'(?i:s\d{1,2}e(\d{1,4})).*?(mp4|mkv|flv|avi|rmvb|m4p|m4v)$'
+    EPISODE_NAME_RE = re.compile(r's\d{1,2}e(\d{1,4}).*?(mp4|mkv|flv|avi|rmvb|m4p|m4v)$', re.IGNORECASE)
 
     def get_episode_to_dir_map(self):
         episode_map = dict()
-        for (path, dir) in list_dir(self.path):
-            fullpath = os.path.join(path, dir)
-            match = TvSeason.EPISODE_NAME_RE.search(dir)
+        for (path, filename) in list_file(self.path):
+            fullpath = os.path.join(path, filename)
+            match = TvSeason.EPISODE_NAME_RE.search(filename)
             if match:
                 episode_number = int(match.group(1))
                 episode_map[episode_number] = fullpath
@@ -283,7 +283,7 @@ class TvEpisodeManager(models.Manager):
             episode.season_number = season_number
             episode.poster_path = poster_path
             episode.air_date = air_date
-            episode.set_path(dirpath)
+            await sync_to_async(episode.set_path)(dirpath)
         except TvEpisode.DoesNotExist:
             # or create
             episode = TvEpisode(
