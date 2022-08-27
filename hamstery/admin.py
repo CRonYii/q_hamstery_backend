@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import  TorznabIndexer, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode
+from .models import  TorznabIndexer, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload
 
 # Register your models here.
 
@@ -38,3 +38,7 @@ class TvEpisodeInline(admin.TabularInline):
 class TvSeasonAdmin(admin.ModelAdmin):
     list_display = ['tmdb_id', 'name', 'path']
     inlines = (TvEpisodeInline, )
+
+@admin.register(TvDownload)
+class TvDownloadAdmin(admin.ModelAdmin):
+    list_display = ['hash', 'episode']

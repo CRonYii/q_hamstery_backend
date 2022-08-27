@@ -283,13 +283,7 @@ class TvEpisodeManager(models.Manager):
             episode.season_number = season_number
             episode.poster_path = poster_path
             episode.air_date = air_date
-            if episode.status == TvEpisode.Status.DOWNLOADING:
-                if status == TvEpisode.Status.READY:
-                    # TODO cancel download
-                    pass
-                # DOWNLOADING and MISSING, do not change status here.
-            else:
-                episode.status = status
+            episode.set_path(dirpath)
         except TvEpisode.DoesNotExist:
             # or create
             episode = TvEpisode(
@@ -313,7 +307,6 @@ class TvEpisode(models.Model):
 
     class Status(models.IntegerChoices):
         MISSING = 1
-        DOWNLOADING = 2
         READY = 3
     status = models.IntegerField(choices=Status.choices)
     name = models.CharField(max_length=256)
@@ -324,3 +317,31 @@ class TvEpisode(models.Model):
     air_date = models.DateField(blank=True)
 
     objects: TvEpisodeManager = TvEpisodeManager()
+
+    def set_path(self, path: str, skip=False):
+        if len(path) == 0:
+            self.path = ""
+            self.status = TvEpisode.Status.MISSING
+        else:
+            if not skip and not os.path.isfile(path):
+                return False
+            self.path = path
+            self.status = TvEpisode.Status.READY
+            self.cancel_related_downloads()
+        return True
+
+    def cancel_related_downloads(self):
+        self.downloads.all().delete()
+
+    def get_formatted_filename(self):
+        season: TvSeason = self.season
+        show: TvShow = season.show
+        filename = "%s - S%02dE%02d - %s" % (show.name, season.season_number, self.episode_number, self.name)
+        return filename
+
+    def get_folder(self):
+        season: TvSeason = self.season
+        return season.path
+
+    def __str__(self):
+        return "%s - S%02dE%02d - %s" % (self.id, self.season_number, self.episode_number, self.name)

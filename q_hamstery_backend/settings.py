@@ -11,6 +11,16 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+
+# Initialise environment variables
+env = environ.Env(
+    DEBUG=(bool, False),
+    SECRET_KEY=(str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
+    QBITTORRENT_USERNAME=(str, ''),
+    QBITTORRENT_PASSWORD=(str, ''),
+    )
+environ.Env.read_env('.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +30,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -131,7 +141,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-    ]
+    ],
 }
 
 LOGGING = {
@@ -156,7 +166,7 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['backend', 'console'],
+            'handlers': ['console'],
             'propagate': True,
             'level': 'INFO',
         },
@@ -176,4 +186,11 @@ LOGGING = {
             'style': '{',
         },
     },
+}
+
+QBITTORRENT_CONFIG = {
+    'host': env('QBITTORRENT_HOST'),
+    'port': env('QBITTORRENT_PORT'),
+    'username': env('QBITTORRENT_USERNAME'),
+    'password': env('QBITTORRENT_PASSWORD'),
 }

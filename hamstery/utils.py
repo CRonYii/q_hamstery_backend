@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 import os
+import re
 
 
 def validate_directory_exist(dir):
@@ -54,11 +55,11 @@ def value_or(dict: dict, key, default):
     return value
 
 
-def success(data):
+def success(data) -> Result:
     return Result(True, data)
 
 
-def failure(errors):
+def failure(errors) -> Result:
     return Result(False, errors)
 
 
@@ -109,3 +110,8 @@ def validate_params(Form: forms.Form):
             return api(request, *args, **kwargs)
         return _wrapped_wrapped_api
     return _wrapped_api
+
+VIDEO_FILE_RE = re.compile(r'.*?\.(mp4|mkv|flv|avi|rmvb|m4p|m4v)$')
+
+def is_video_extension(name):
+    return VIDEO_FILE_RE.match(name)
