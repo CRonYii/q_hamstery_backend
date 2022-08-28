@@ -105,7 +105,8 @@ class TvShowManager(models.Manager):
             if dirpath == '':
                 dirpath = os.path.join(
                     storage.path, '%s (%d)' % (name, air_date.year))
-                os.mkdir(dirpath)
+                if not os.path.exists(dirpath):
+                    os.mkdir(dirpath)
             show = TvShow(
                 storage=storage,
                 tmdb_id=tmdb_id,

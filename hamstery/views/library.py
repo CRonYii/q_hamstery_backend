@@ -1,6 +1,7 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from asgiref.sync import async_to_sync
 
 from hamstery.qbittorrent import download_episode
 
@@ -27,14 +28,14 @@ class TvStorageView(viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=True, url_name='add-show', url_path='add-show')
     def add_show(self, request, pk=None):
-        storage: TvStorage = self.get_object()
+        storage: TvStorage = TvStorage.objects.prefetch_related('lib').get(pk=pk)
         form = TMDBForm(request.POST)
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
         tmdb_id = form.cleaned_data['tmdb_id']
         if storage.shows.filter(tmdb_id__exact=tmdb_id).exists():
             return Response('Show already exists', status=status.HTTP_400_BAD_REQUEST)
-        TvShow.objects.create_or_update_by_tmdb_id(storage, tmdb_id)
+        async_to_sync(TvShow.objects.create_or_update_by_tmdb_id)(storage, tmdb_id)
         return Response('Ok')
 
 class TvShowView(viewsets.ReadOnlyModelViewSet):
