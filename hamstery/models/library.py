@@ -319,20 +319,22 @@ class TvEpisode(models.Model):
 
     objects: TvEpisodeManager = TvEpisodeManager()
 
-    def set_path(self, path: str, skip=False):
+    def set_path(self, path: str):
         if len(path) == 0:
-            self.path = ""
+            self.path = ''
             self.status = TvEpisode.Status.MISSING
+            self.cancel_related_downloads(True)
         else:
-            if not skip and not os.path.isfile(path):
-                return False
             self.path = path
             self.status = TvEpisode.Status.READY
-            self.cancel_related_downloads()
+            self.cancel_related_downloads(False)
         return True
 
-    def cancel_related_downloads(self):
-        self.downloads.all().delete()
+    def cancel_related_downloads(self, all: bool):
+        if all is True:
+            self.downloads.all().delete()
+        else:
+            self.downloads.filter(done=False).delete()
 
     def get_formatted_filename(self):
         season: TvSeason = self.season

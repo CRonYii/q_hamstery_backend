@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 class Download(models.Model):
     hash = models.CharField(max_length=256, primary_key=True)
+    done = models.BooleanField(default=False)
 
     class Meta:
         abstract = True

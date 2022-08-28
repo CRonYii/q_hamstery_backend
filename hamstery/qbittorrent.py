@@ -120,6 +120,9 @@ def handle_completed_tv_task(task):
     if episode.status == TvEpisode.Status.READY:
         return failure('Episode already exists')
     
+    download.done = True
+    download.save()
+
     _, ext = os.path.splitext(download.filename)
     folder = episode.get_folder()
     filename = "%s%s" % (episode.get_formatted_filename(), ext)
@@ -127,7 +130,7 @@ def handle_completed_tv_task(task):
 
     qbt_client.torrents_set_location(folder, hash)
     qbt_client.torrents_rename_file(hash, old_path=download.filename, new_path=filename)
-    if episode.set_path(full_path, True) is False:
+    if episode.set_path(full_path) is False:
         return failure('Failed to import episode')
     episode.save()
     qbt_client.torrents_remove_tags(DOWNLOADING_TV_TAG, hash)
@@ -141,7 +144,22 @@ def handle_downloading_tv_tasks():
     handle_tasks(DOWNLOADING_TV_TAG, handle_completed_tv_task, status='completed')
 
 
+def handle_organized_tv_task(task):
+    try:
+        hash = task['hash']
+        _: TvDownload = TvDownload.objects.get(pk=hash)
+    except TvDownload.DoesNotExist:
+        return failure('Download removed')
+    
+    return success(None)
+
+
+def handle_organized_tv_tasks():
+    handle_tasks(ORGANIZED_TV_TAG, handle_organized_tv_task)
+
+
 def qbittorrent_handle_tv_downloads():
+    handle_organized_tv_tasks()
     handle_downloading_tv_tasks()
     handle_fetching_tv_tasks()
     handle_unscheduled_tv_tasks()

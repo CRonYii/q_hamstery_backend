@@ -61,3 +61,10 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
             return Response('Ok')
         else:
             return Response('Invalid URL', status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['delete'], detail=True)
+    def remove(self, request, pk=None):
+        episode: TvEpisode = self.get_object()
+        if episode.status == TvEpisode.Status.READY:
+            episode.set_path('')
+        return Response('Ok')
