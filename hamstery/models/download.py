@@ -19,3 +19,8 @@ class TvDownload(Download):
     episode: TvEpisode = models.ForeignKey(
         TvEpisode, related_name='downloads', on_delete=models.CASCADE, parent_link=True)
     filename = models.CharField(max_length=4096, blank=True, default='')
+
+    def cancel(self):
+        from ..qbittorrent import qbt_client
+        qbt_client.torrents_delete(True, self.hash)
+        self.delete()

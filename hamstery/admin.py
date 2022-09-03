@@ -41,4 +41,4 @@ class TvSeasonAdmin(admin.ModelAdmin):
 
 @admin.register(TvDownload)
 class TvDownloadAdmin(admin.ModelAdmin):
-    list_display = ['hash', 'episode']
+    list_display = ['hash', 'episode', 'done']

@@ -328,13 +328,15 @@ class TvEpisode(models.Model):
             self.path = path
             self.status = TvEpisode.Status.READY
             self.cancel_related_downloads(False)
-        return True
 
     def cancel_related_downloads(self, all: bool):
         if all is True:
-            self.downloads.all().delete()
+            downalods = self.downloads.all()
         else:
-            self.downloads.filter(done=False).delete()
+            downalods = self.downloads.filter(done=False)
+        for download in downalods:
+            logger.info('Cancelled "%s" since a video is imported for this episode' % download.filename)
+            download.cancel()
 
     def get_formatted_filename(self):
         season: TvSeason = self.season
@@ -345,6 +347,22 @@ class TvEpisode(models.Model):
     def get_folder(self):
         season: TvSeason = self.season
         return season.path
+
+    def download_by_url(self, urls):
+        if self.status == TvEpisode.Status.READY:
+            return False
+        from ..qbittorrent import qbt_client, HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG
+        res = qbt_client.torrents_add(
+            urls=urls,
+            rename=self.id,
+            category=HAMSTERY_CATEGORY,
+            tags=UNSCHEDULED_TV_TAG,
+            is_paused=False)
+        if res == 'Ok.':
+            return True
+        else:
+            return False
+        
 
     def __str__(self):
         return "%s - S%02dE%02d - %s" % (self.id, self.season_number, self.episode_number, self.name)

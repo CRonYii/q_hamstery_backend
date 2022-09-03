@@ -35,8 +35,13 @@ def handle_tasks(tag, handler: Callable[[Any], Result], status=None):
     for task in tasks:
         r = handler(task)
         if r.success is False:
-            qbt_client.torrents_delete(True, task['hash'])
-            TvDownload.objects.filter(pk=task['hash']).delete()
+            # do not delete files if it's because download cannot be found in DB
+            # This can happen in the event of upgrade bug/reinstallation of hamstery 
+            # so DB data is lost but downlaod is still kept in qbittorrent
+            in_db = r.payload != 'Cannot find download in DB'
+            qbt_client.torrents_delete(in_db, task['hash'])
+            if in_db:
+                TvDownload.objects.filter(pk=task['hash']).delete()
             logger.warning('%s Download "%s" cancelled: %s' % (tag, task['name'], r.payload))
         else:
             if r.payload is not None:
@@ -48,10 +53,8 @@ def handle_unscheduled_tv_task(task):
         ep_id = int(task['name'])
         episode: TvEpisode = TvEpisode.objects.get(pk=ep_id)
     except (TvEpisode.DoesNotExist, ValueError):
-        return failure('Invalid download')
+        return failure('Cannot find download in DB')
     filename = episode.get_formatted_filename()
-    if episode.status == TvEpisode.Status.READY:
-        return failure('Episode "%s" already exists' % filename)
     
     download: TvDownload = TvDownload.objects.create(hash=task['hash'], episode=episode)
     download.save()
@@ -71,10 +74,7 @@ def handle_fetching_tv_task(task):
         hash = task['hash']
         download: TvDownload = TvDownload.objects.get(pk=hash)
     except (TvDownload.DoesNotExist, ValueError):
-        return failure('Invalid download')
-    episode = download.episode
-    if episode.status == TvEpisode.Status.READY:
-        return failure('Episode already exists')
+        return failure('Cannot find download in DB')
     files = qbt_client.torrents_files(hash)
     if len(files) == 0:
         # skip this time, torrents need some time to fecth content...
@@ -98,27 +98,13 @@ def handle_fetching_tv_tasks():
     handle_tasks(FETCHING_TV_TAG, handle_fetching_tv_task)
 
 
-def handle_downloading_tv_task(task):
-    try:
-        hash = task['hash']
-        download: TvDownload = TvDownload.objects.get(pk=hash)
-    except (TvDownload.DoesNotExist, ValueError):
-        return failure('Invalid download')
-    episode = download.episode
-    if episode.status == TvEpisode.Status.READY:
-        return failure('Episode already exists')
-    
-    return success(None)
-
 def handle_completed_tv_task(task):
     try:
         hash = task['hash']
         download: TvDownload = TvDownload.objects.get(pk=hash)
     except (TvDownload.DoesNotExist, ValueError):
-        return failure('Invalid download')
+        return failure('Cannot find download in DB')
     episode: TvEpisode = download.episode
-    if episode.status == TvEpisode.Status.READY:
-        return failure('Episode already exists')
     
     download.done = True
     download.save()
@@ -130,8 +116,7 @@ def handle_completed_tv_task(task):
 
     qbt_client.torrents_set_location(folder, hash)
     qbt_client.torrents_rename_file(hash, old_path=download.filename, new_path=filename)
-    if episode.set_path(full_path) is False:
-        return failure('Failed to import episode')
+    episode.set_path(full_path)
     episode.save()
     qbt_client.torrents_remove_tags(DOWNLOADING_TV_TAG, hash)
     qbt_client.torrents_add_tags(ORGANIZED_TV_TAG, hash)
@@ -140,26 +125,10 @@ def handle_completed_tv_task(task):
 
 
 def handle_downloading_tv_tasks():
-    handle_tasks(DOWNLOADING_TV_TAG, handle_downloading_tv_task, status='downloading')
     handle_tasks(DOWNLOADING_TV_TAG, handle_completed_tv_task, status='completed')
 
 
-def handle_organized_tv_task(task):
-    try:
-        hash = task['hash']
-        _: TvDownload = TvDownload.objects.get(pk=hash)
-    except TvDownload.DoesNotExist:
-        return failure('Download removed')
-    
-    return success(None)
-
-
-def handle_organized_tv_tasks():
-    handle_tasks(ORGANIZED_TV_TAG, handle_organized_tv_task)
-
-
 def qbittorrent_handle_tv_downloads():
-    handle_organized_tv_tasks()
     handle_downloading_tv_tasks()
     handle_fetching_tv_tasks()
     handle_unscheduled_tv_tasks()
@@ -167,17 +136,4 @@ def qbittorrent_handle_tv_downloads():
 
 def qbittorrent_monitor_step():
     qbittorrent_handle_tv_downloads()
-
-
-def download_episode(episode: TvEpisode, urls):
-    res = qbt_client.torrents_add(
-        urls=urls,
-        rename=episode.id,
-        category=HAMSTERY_CATEGORY,
-        tags=UNSCHEDULED_TV_TAG,
-        is_paused=False)
-    if res == 'Ok.':
-        return True
-    else:
-        return False
     
