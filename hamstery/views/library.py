@@ -3,8 +3,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from asgiref.sync import async_to_sync
 
-from hamstery.qbittorrent import download_episode
-
 from ..forms import DownloadForm, TMDBForm
 from ..serializers import TvLibrarySerializer, TvStorageSerializer, TvShowSerializer, TvSeasonSerializer, TvEpisodeSerializer
 from ..models import TvLibrary, TvStorage, TvShow, TvSeason, TvSeason, TvEpisode
@@ -52,19 +50,20 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
 
     @action(methods=['post'], detail=True)
     def download(self, request, pk=None):
-        episode = self.get_object()
+        episode: TvEpisode = self.get_object()
         form = DownloadForm(request.POST)
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
         url = form.cleaned_data['url']
-        if download_episode(episode, url):
+        if episode.download_by_url(url):
             return Response('Ok')
         else:
-            return Response('Invalid URL', status=status.HTTP_400_BAD_REQUEST)
+            return Response('Invalid download', status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['delete'], detail=True)
     def remove(self, request, pk=None):
         episode: TvEpisode = self.get_object()
         if episode.status == TvEpisode.Status.READY:
             episode.set_path('')
+            episode.save()
         return Response('Ok')
