@@ -15,4 +15,5 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('auth/login', views.login_view),
     path('auth/logout', views.logout_view),
+    path('auth/test', views.test_auth_view),
 ]
