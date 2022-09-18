@@ -89,7 +89,7 @@ class TvShowManager(models.Manager):
         details = res.payload
         name = details['name']
         air_date = details['first_air_date']
-        air_date = datetime.strptime(air_date, '%Y-%m-%d')
+        air_datetime = datetime.strptime(air_date, '%Y-%m-%d')
         number_of_episodes = details['number_of_episodes']
         number_of_seasons = details['number_of_seasons']
         poster_path = value_or(details, 'poster_path', '')
@@ -100,11 +100,12 @@ class TvShowManager(models.Manager):
             show.number_of_episodes = number_of_episodes
             show.number_of_seasons = number_of_seasons
             show.poster_path = poster_path
+            show.air_date = air_date
         except TvShow.DoesNotExist:
             # or create
             if dirpath == '':
                 dirpath = os.path.join(
-                    storage.path, '%s (%d)' % (name, air_date.year))
+                    storage.path, '%s (%d)' % (name, air_datetime.year))
                 if not os.path.exists(dirpath):
                     os.mkdir(dirpath)
             show = TvShow(
@@ -115,6 +116,7 @@ class TvShowManager(models.Manager):
                 number_of_episodes=number_of_episodes,
                 number_of_seasons=number_of_seasons,
                 poster_path=poster_path,
+                air_date=air_date
             )
         await sync_to_async(show.save)()
         seasons = details['seasons']
@@ -157,6 +159,7 @@ class TvShow(models.Model):
     number_of_episodes = models.IntegerField()
     number_of_seasons = models.IntegerField()
     poster_path = models.CharField(max_length=1024, blank=True, default='')
+    air_date = models.DateField(blank=True, null=True)
 
     objects: TvShowManager = TvShowManager()
 
@@ -241,7 +244,7 @@ class TvSeason(models.Model):
     season_number = models.IntegerField()
     number_of_episodes = models.IntegerField()
     poster_path = models.CharField(max_length=1024, blank=True, default='')
-    air_date = models.DateField(blank=True)
+    air_date = models.DateField(blank=True, null=True)
 
     objects: TvSeasonManager = TvSeasonManager()
 
@@ -315,7 +318,7 @@ class TvEpisode(models.Model):
     season_number = models.IntegerField()
     episode_number = models.IntegerField(db_index=True)
     poster_path = models.CharField(max_length=1024, blank=True, default='')
-    air_date = models.DateField(blank=True)
+    air_date = models.DateField(blank=True, null=True)
 
     objects: TvEpisodeManager = TvEpisodeManager()
 
