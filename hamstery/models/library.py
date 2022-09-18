@@ -207,7 +207,7 @@ class TvSeasonManager(models.Manager):
         episodes = details['episodes']
         number_of_episodes = len(episodes)
         poster_path = value_or(details, 'poster_path', show.poster_path)
-        air_date = value_or(details, 'air_date', '')
+        air_date = details['air_date']
         try:
             # update
             season: TvSeason = await show.seasons.aget(path=dirpath)
@@ -276,7 +276,7 @@ class TvEpisodeManager(models.Manager):
         name = details['name']
         season_number = details['season_number']
         poster_path = value_or(details, 'still_path', season.poster_path)
-        air_date = value_or(details, 'air_date', '')
+        air_date = details['air_date']
         status = TvEpisode.Status.MISSING if dirpath == '' else TvEpisode.Status.READY
 
         try:
