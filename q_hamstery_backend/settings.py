@@ -21,6 +21,7 @@ env = environ.Env(
         str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
     QBITTORRENT_USERNAME=(str, ''),
     QBITTORRENT_PASSWORD=(str, ''),
+    CSRF_TRUSTED_ORIGINS=(str, None),
 )
 environ.Env.read_env('.env')
 
@@ -39,6 +40,8 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = [env('HOST')]
+if env('CSRF_TRUSTED_ORIGINS') is not None:
+    CSRF_TRUSTED_ORIGINS = [env('CSRF_TRUSTED_ORIGINS')]
 
 
 # Application definition
