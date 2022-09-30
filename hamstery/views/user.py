@@ -1,8 +1,7 @@
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.contrib.auth import authenticate, login, logout
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
-from hamstery.utils import JSON, POST, validate_params
+from hamstery.utils import JSON, POST, need_authentication, validate_params
 
 from ..forms import LoginForm
 
@@ -27,8 +26,6 @@ def logout_view(request):
     return HttpResponse('Ok')
 
 
+@need_authentication
 def test_auth_view(request):
-    if not request.user.is_authenticated:
-        return HttpResponseBadRequest('Invalid credentials')
-    else:
-        return JsonResponse({'id': request.user.id, 'username': request.user.username})
+    return JsonResponse({'id': request.user.id, 'username': request.user.username})

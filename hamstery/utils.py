@@ -1,14 +1,17 @@
-from fileinput import filename
+import base64
 import json
-from django import forms
-from django.http import JsonResponse, HttpResponseNotFound
-from typing import Sequence
-from functools import wraps
-from django.core.exceptions import ValidationError
-from rest_framework import status
-from rest_framework.response import Response
 import os
 import re
+from functools import wraps
+from typing import Sequence
+
+import psutil
+from django import forms
+from django.core.exceptions import ValidationError
+from django.http import (HttpResponseBadRequest, HttpResponseNotFound,
+                         JsonResponse)
+from rest_framework import status
+from rest_framework.response import Response
 
 
 def validate_directory_exist(dir):
@@ -25,6 +28,27 @@ def list_dir(path) -> Sequence[Sequence[str]]:
 def list_file(path) -> Sequence[Sequence[str]]:
     for (dirpath, _, filenames) in os.walk(path):
         return [[dirpath, filename] for filename in filenames]
+
+
+def make_file_uri_obj(path, name):
+    return {
+        'key': base64.b64encode(os.path.join(path, name).encode('utf-8')).decode('utf-8'),
+        'path': path,
+        'title': name
+    }
+
+
+def list_dir_and_file(path):
+    for (dirpath, dirnames, filenames) in os.walk(path):
+        return {
+            'path': [make_file_uri_obj(dirpath, dir) for dir in dirnames],
+            'file': [make_file_uri_obj(dirpath, filename) for filename in filenames]
+        }
+
+
+def list_root_storages():
+    return [make_file_uri_obj('', x.mountpoint) for x in psutil.disk_partitions() if x.fstype ==
+     'ext4' or x.fstype == 'NTFS']
 
 
 class Result:
@@ -96,6 +120,16 @@ def POST(api):
     return _wrapped_api
 
 
+def need_authentication(api):
+    @wraps(api)
+    def _wrapped_api(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponseBadRequest('Invalid credentials')
+        else:
+            return api(request, *args, **kwargs)
+    return _wrapped_api
+
+
 def validate_params(Form: forms.Form):
     def _wrapped_api(api):
         @wraps(api)
@@ -117,7 +151,9 @@ def validate_params(Form: forms.Form):
         return _wrapped_wrapped_api
     return _wrapped_api
 
+
 VIDEO_FILE_RE = re.compile(r'.*?\.(mp4|mkv|flv|avi|rmvb|m4p|m4v)$')
+
 
 def is_video_extension(name):
     return VIDEO_FILE_RE.match(name)
