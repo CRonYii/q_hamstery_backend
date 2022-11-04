@@ -210,12 +210,13 @@ class TvSeasonManager(models.Manager):
         air_date = details['air_date']
         try:
             # update
-            season: TvSeason = await show.seasons.aget(path=dirpath)
-            season.tmdb_id = tmdb_id
+            # should allow one entry per season per show.
+            season: TvSeason = await show.seasons.aget(tmdb_id=tmdb_id)
             season.name = name
             season.number_of_episodes = number_of_episodes
             season.poster_path = poster_path
             season.air_date = air_date
+            season.path = dirpath
         except TvSeason.DoesNotExist:
             # or create
             if dirpath == '':
