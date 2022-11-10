@@ -53,16 +53,25 @@ def list_root_storages():
 
 class Result:
 
-    def __init__(self, success, payload):
+    def __init__(self, success, payload=None):
         self.success = success
-        self.payload = payload
+        if payload is None:
+            self.payload = []
+        else:
+            self.payload = [payload]
 
     def agg(self, result):
         if result.success is False:
             if self.success is True:
                 self.success = False
                 self.payload = []
-            self.payload.append(result.payload)
+        if result.success is not self.success:
+            if self.success is True:
+                self.success = False
+                self.payload = []
+            else:
+                return self
+        self.payload = self.payload + result.payload
         return self
 
     def into_response(self):
@@ -85,7 +94,7 @@ def value_or(dict: dict, key, default):
     return value
 
 
-def success(data) -> Result:
+def success(data=None) -> Result:
     return Result(True, data)
 
 

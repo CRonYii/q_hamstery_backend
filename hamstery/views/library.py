@@ -14,7 +14,7 @@ class TvLibraryView(viewsets.ModelViewSet):
     queryset = TvLibrary.objects.all()
     serializer_class = TvLibrarySerializer
 
-    @action(methods=['get'], detail=True)
+    @action(methods=['post'], detail=True)
     def scan(self, request, pk=None):
         lib: TvLibrary = self.get_object()
         return lib.scan().into_response()
