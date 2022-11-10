@@ -40,14 +40,17 @@ class TvStorageView(viewsets.ModelViewSet):
 class TvShowView(viewsets.ReadOnlyModelViewSet):
     queryset = TvShow.objects.all()
     serializer_class = TvShowSerializer
+    filterset_fields = ['storage']
 
 class TvSeasonView(viewsets.ReadOnlyModelViewSet):
     queryset = TvSeason.objects.all()
     serializer_class = TvSeasonSerializer
+    filterset_fields = ['show']
 
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
     serializer_class = TvEpisodeSerializer
+    filterset_fields = ['season']
 
     @action(methods=['post'], detail=True)
     def download(self, request, pk=None):
