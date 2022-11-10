@@ -23,6 +23,7 @@ class TvLibraryView(viewsets.ModelViewSet):
 class TvStorageView(viewsets.ModelViewSet):
     queryset = TvStorage.objects.all()
     serializer_class = TvStorageSerializer
+    filterset_fields = ['lib']
 
     @action(methods=['post'], detail=True, url_name='add-show', url_path='add-show')
     def add_show(self, request, pk=None):
