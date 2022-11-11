@@ -42,6 +42,12 @@ class TvShowView(viewsets.ReadOnlyModelViewSet):
     serializer_class = TvShowSerializer
     filterset_fields = ['storage']
 
+    @action(methods=['post'], detail=True)
+    def scan(self, request, pk=None):
+        show: TvShow = TvShow.objects.prefetch_related('storage').get(pk=pk)
+        print(show.storage.lib.lang)
+        return show.scan().into_response()
+
 class TvSeasonView(viewsets.ReadOnlyModelViewSet):
     queryset = TvSeason.objects.all()
     serializer_class = TvSeasonSerializer

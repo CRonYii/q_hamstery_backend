@@ -176,6 +176,23 @@ class TvShow(models.Model):
                     season_map[season_number] = fullpath
         return season_map
 
+    @async_to_sync
+    async def scan(self):
+        res = success()
+        try:
+            print(self.tmdb_id, self.storage.lib.lang)
+            tmdb_res = await tmdb_tv_show_details(self.tmdb_id, lang=self.storage.lib.lang)
+            if not tmdb_res.success:
+                return tmdb_res
+            details = tmdb_res.data()
+            seasons = details['seasons']
+            await self.scan_seasons(seasons)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            res.agg(failure('Failed to scan storage %s: %s' %
+                    (self.path, str(e))))
+        return res
+
     async def scan_seasons(self, seasons):
         # clear removed seasons
         async for season in self.seasons.all():
