@@ -53,38 +53,51 @@ def list_root_storages():
 
 class Result:
 
-    def __init__(self, success, payload=None):
+    def __init__(self, success, payload=None, multi=False):
         self.success = success
-        if payload is None:
-            self.payload = []
+        self.multi = multi
+        if payload is not None:
+            self.__payload = [payload]
         else:
-            self.payload = [payload]
+            self.__payload = None
 
     def agg(self, result):
         if result.success is False:
             if self.success is True:
                 self.success = False
-                self.payload = []
+                self.__payload = []
         if result.success is not self.success:
             if self.success is True:
                 self.success = False
-                self.payload = []
+                self.__payload = []
             else:
                 return self
-        self.payload = self.payload + result.payload
+        if self.__payload is None:
+            if self.multi:
+                self.__payload = [result.data()]
+            else:
+                self.__payload = result.data()
+        else:
+            self.multi = True
+            self.__payload = self.__payload + result.data()
         return self
+
+    def data(self):
+        if not self.multi and self.__payload is not None:
+            return self.__payload[0]
+        return self.__payload
 
     def into_response(self):
         if self.success is True:
-            return Response(self.payload)
+            return Response(self.data())
         else:
-            return Response(self.payload, status=status.HTTP_400_BAD_REQUEST)
+            return Response(self.data(), status=status.HTTP_400_BAD_REQUEST)
 
     def __str__(self):
         if self.success:
-            return 'Ok(%s)' % self.payload
+            return 'Ok(%s)' % self.data()
         else:
-            return 'Err(%s)' % self.payload
+            return 'Err(%s)' % self.data()
 
 
 def value_or(dict: dict, key, default):
@@ -94,8 +107,8 @@ def value_or(dict: dict, key, default):
     return value
 
 
-def success(data=None) -> Result:
-    return Result(True, data)
+def success(data=None, multi=False) -> Result:
+    return Result(True, data, multi)
 
 
 def failure(errors) -> Result:

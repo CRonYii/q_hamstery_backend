@@ -38,14 +38,14 @@ def handle_tasks(tag, handler: Callable[[Any], Result], status=None):
             # do not delete files if it's because download cannot be found in DB
             # This can happen in the event of upgrade bug/reinstallation of hamstery 
             # so DB data is lost but downlaod is still kept in qbittorrent
-            in_db = r.payload != 'Cannot find download in DB'
+            in_db = r.data() != 'Cannot find download in DB'
             qbt_client.torrents_delete(in_db, task['hash'])
             if in_db:
                 TvDownload.objects.filter(pk=task['hash']).delete()
-            logger.warning('%s Download "%s" cancelled: %s' % (tag, task['name'], r.payload))
+            logger.warning('%s Download "%s" cancelled: %s' % (tag, task['name'], r.data()))
         else:
-            if r.payload is not None:
-                logger.info('%s Download "%s" move to next phase: %s' % (tag, task['name'], r.payload))
+            if r.data() is not None:
+                logger.info('%s Download "%s" move to next phase: %s' % (tag, task['name'], r.data()))
 
 
 def handle_unscheduled_tv_task(task):

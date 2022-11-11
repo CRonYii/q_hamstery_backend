@@ -24,7 +24,7 @@ class TvLibrary(models.Model):
 
     @async_to_sync
     async def scan(self):
-        res = success()
+        res = success(multi=True)
         storages: Sequence[TvStorage] = self.storages.all()
         routines = []
         async for storage in storages:
@@ -86,7 +86,7 @@ class TvShowManager(models.Manager):
         res = await tmdb_tv_show_details(tmdb_id, lang=storage.lib.lang)
         if not res.success:
             return res
-        details = res.payload[0]
+        details = res.data()
         name = details['name']
         air_date = details['first_air_date']
         air_datetime = datetime.strptime(air_date, '%Y-%m-%d')
@@ -140,7 +140,7 @@ class TvShowManager(models.Manager):
             query=name, lang=storage.lib.lang, year=year)
         if not tmdb_res.success:
             return tmdb_res
-        shows = tmdb_res.payload[0]
+        shows = tmdb_res.data()
         if shows['total_results'] == 0:
             return failure('Not found in TMDB')
         show_data = shows['results'][0]
@@ -201,7 +201,7 @@ class TvSeasonManager(models.Manager):
             tv_tmdb_id, season_number, lang=show.storage.lib.lang)
         if not res.success:
             return res
-        details: dict = res.payload[0]
+        details: dict = res.data()
         name = details['name']
         tmdb_id = details['id']
         episodes = details['episodes']
