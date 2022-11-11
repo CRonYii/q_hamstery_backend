@@ -53,4 +53,4 @@ class TvLibrarySerializer(serializers.ModelSerializer):
 class TvDownloadSerializer(serializers.ModelSerializer):
     class Meta:
         model = TvDownload
-        fields = ('id', 'hash', 'done', 'episode', 'filename')
+        fields = ('hash', 'done', 'episode', 'filename')
