@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TorznabIndexer, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode
+from .models import TorznabIndexer, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload
 
 
 class TorznabIndexerSerializer(serializers.ModelSerializer):
@@ -48,3 +48,9 @@ class TvLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model = TvLibrary
         fields = ('id', 'name', 'lang')
+
+
+class TvDownloadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TvDownload
+        fields = ('id', 'hash', 'done', 'episode', 'filename')

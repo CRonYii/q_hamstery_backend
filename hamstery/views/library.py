@@ -5,7 +5,7 @@ from asgiref.sync import async_to_sync
 
 from ..forms import DownloadForm, TMDBForm
 from ..serializers import TvLibrarySerializer, TvStorageSerializer, TvShowSerializer, TvSeasonSerializer, TvEpisodeSerializer
-from ..models import TvLibrary, TvStorage, TvShow, TvSeason, TvSeason, TvEpisode
+from ..models import TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode
 
 # Create your views here.
 
