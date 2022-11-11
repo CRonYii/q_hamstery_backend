@@ -6,5 +6,5 @@ class HamsteryConfig(AppConfig):
     name = 'hamstery'
 
     def ready(self) -> None:
-        from . import qbt_monitor
-        qbt_monitor.start()
+        from . import background_scheduler
+        background_scheduler.start()
