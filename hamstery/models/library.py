@@ -10,6 +10,7 @@ from asgiref.sync import async_to_sync, sync_to_async
 
 from ..tmdb import tmdb_search_tv_shows, tmdb_tv_season_details, tmdb_tv_show_details
 from ..utils import failure, list_dir, list_file, success, validate_directory_exist, value_or
+from ..plex import plex_manager
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +181,6 @@ class TvShow(models.Model):
     async def scan(self):
         res = success()
         try:
-            print(self.tmdb_id, self.storage.lib.lang)
             tmdb_res = await tmdb_tv_show_details(self.tmdb_id, lang=self.storage.lib.lang)
             if not tmdb_res.success:
                 return tmdb_res
@@ -348,6 +348,8 @@ class TvEpisode(models.Model):
         else:
             self.path = path
             self.status = TvEpisode.Status.READY
+            if plex_manager:
+                plex_manager.refresh_plex_library_by_filepath(path)
             self.cancel_related_downloads(False)
 
     def cancel_related_downloads(self, all: bool):

@@ -1,10 +1,12 @@
 import logging
 import os
+import traceback
 from typing import Any, Callable
-from django.conf import settings
-import qbittorrentapi
-from hamstery.models.download import TvDownload
 
+import qbittorrentapi
+from django.conf import settings
+
+from hamstery.models.download import TvDownload
 from hamstery.models.library import TvEpisode
 from hamstery.utils import Result, failure, is_video_extension, success
 
@@ -16,6 +18,7 @@ UNSCHEDULED_TV_TAG = "unscheduled-tv"
 FETCHING_TV_TAG = "fetching-tv"
 DOWNLOADING_TV_TAG = "downloading-tv"
 ORGANIZED_TV_TAG = "organized-tv"
+ERROR_TV_TAG = "error-tv"
 
 QBITTORRENT_CONFIG = getattr(settings, "QBITTORRENT_CONFIG", None)
 if QBITTORRENT_CONFIG is None:
@@ -33,19 +36,25 @@ def handle_tasks(tag, handler: Callable[[Any], Result], status=None):
     tasks = qbt_client.torrents_info(
         status_filter=status, category=HAMSTERY_CATEGORY, tag=tag)
     for task in tasks:
-        r = handler(task)
-        if r.success is False:
-            # do not delete files if it's because download cannot be found in DB
-            # This can happen in the event of upgrade bug/reinstallation of hamstery 
-            # so DB data is lost but downlaod is still kept in qbittorrent
-            in_db = r.data() != 'Cannot find download in DB'
-            qbt_client.torrents_delete(in_db, task['hash'])
-            if in_db:
-                TvDownload.objects.filter(pk=task['hash']).delete()
-            logger.warning('%s Download "%s" cancelled: %s' % (tag, task['name'], r.data()))
-        else:
-            if r.data() is not None:
-                logger.info('%s Download "%s" move to next phase: %s' % (tag, task['name'], r.data()))
+        try:
+            r = handler(task)
+            if r.success is False:
+                # do not delete files if it's because download cannot be found in DB
+                # This can happen in the event of upgrade bug/reinstallation of hamstery 
+                # so DB data is lost but downlaod is still kept in qbittorrent
+                in_db = r.data() != 'Cannot find download in DB'
+                qbt_client.torrents_delete(in_db, task['hash'])
+                if in_db:
+                    TvDownload.objects.filter(pk=task['hash']).delete()
+                logger.warning('%s Download "%s" cancelled: %s' % (tag, task['name'], r.data()))
+            else:
+                if r.data() is not None:
+                    logger.info('%s Download "%s" move to next phase: %s' % (tag, task['name'], r.data()))
+        except Exception:
+            logger.error(traceback.format_exc())
+            qbt_client.torrents_remove_tags(tag, task['hash'])
+            qbt_client.torrents_add_tags(ERROR_TV_TAG, task['hash'])
+
 
 
 def handle_unscheduled_tv_task(task):

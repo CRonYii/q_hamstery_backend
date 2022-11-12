@@ -45,7 +45,7 @@ class TvShowView(viewsets.ReadOnlyModelViewSet):
     @action(methods=['post'], detail=True)
     def scan(self, request, pk=None):
         show: TvShow = TvShow.objects.prefetch_related('storage').get(pk=pk)
-        print(show.storage.lib.lang)
+        show.storage.lib # pre-fetch lib here
         return show.scan().into_response()
 
 class TvSeasonView(viewsets.ReadOnlyModelViewSet):

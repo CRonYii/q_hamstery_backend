@@ -4,6 +4,7 @@ import os
 import re
 from functools import wraps
 from typing import Sequence
+from pathlib import Path
 
 import psutil
 from django import forms
@@ -50,6 +51,11 @@ def list_root_storages():
     return [make_file_uri_obj('', x.mountpoint) for x in psutil.disk_partitions() if x.fstype ==
      'ext4' or x.fstype == 'NTFS']
 
+
+def is_subdirectory(parent: str, child: str):
+    parent = Path(parent)
+    child = Path(child)
+    return parent in child.parents
 
 class Result:
 

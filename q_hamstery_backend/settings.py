@@ -21,6 +21,8 @@ env = environ.Env(
         str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
     QBITTORRENT_USERNAME=(str, ''),
     QBITTORRENT_PASSWORD=(str, ''),
+    PLEX_URL=(str, ''),
+    PLEX_TOKEN=(str, ''),
     CSRF_TRUSTED_ORIGINS=(str, None),
 )
 environ.Env.read_env('.env')
@@ -196,6 +198,11 @@ LOGGING = {
             'style': '{',
         },
     },
+}
+
+PLEX_CONFIG = {
+    'url': env('PLEX_URL'),
+    'token': env('PLEX_TOKEN'),
 }
 
 QBITTORRENT_CONFIG = {

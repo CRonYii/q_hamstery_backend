@@ -41,13 +41,15 @@ class TvDownloadView(viewsets.GenericViewSet):
             i = next((x for x in info if x['hash'] == d['hash']), None)
             if i is None:
                 continue
-            d['progress'] = i['progress']
-            d['dlspeed'] = i['dlspeed']
-            d['completed'] = i['completed']
-            d['completion_on'] = i['completion_on']
-            d['size'] = i['total_size']
-            d['eta'] = i['eta']
-            d['ratio'] = i['ratio']
-            d['uploaded'] = i['uploaded']
-            d['upspeed'] = i['upspeed']
+            extra = {}
+            extra['progress'] = i['progress']
+            extra['dlspeed'] = i['dlspeed']
+            extra['completed'] = i['completed']
+            extra['completion_on'] = i['completion_on']
+            extra['size'] = i['total_size']
+            extra['eta'] = i['eta']
+            extra['ratio'] = i['ratio']
+            extra['uploaded'] = i['uploaded']
+            extra['upspeed'] = i['upspeed']
+            d['extra_info'] = extra
         return download
