@@ -109,9 +109,9 @@ def handle_completed_tv_task(task):
     download.done = True
     download.save()
 
-    _, ext = os.path.splitext(download.filename)
+    original_name, ext = os.path.splitext(download.filename)
     folder = episode.get_folder()
-    filename = "%s%s" % (episode.get_formatted_filename(), ext)
+    filename = "%s (%s)%s" % (episode.get_formatted_filename(), original_name, ext)
     full_path = os.path.join(folder, filename)
 
     qbt_client.torrents_set_location(folder, hash)
