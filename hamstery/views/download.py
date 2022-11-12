@@ -38,7 +38,9 @@ class TvDownloadView(viewsets.GenericViewSet):
         hash = '|'.join(map(lambda d: d['hash'], download))
         info = qbt_client.torrents_info(torrent_hashes=hash)
         for d in download:
-            i = next(x for x in info if x['hash'] == d['hash'])
+            i = next((x for x in info if x['hash'] == d['hash']), None)
+            if i is None:
+                continue
             d['progress'] = i['progress']
             d['dlspeed'] = i['dlspeed']
             d['completed'] = i['completed']
