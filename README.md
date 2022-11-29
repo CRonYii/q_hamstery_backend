@@ -2,10 +2,12 @@
 Fills environment variable in `docker-compose.yml` as necessary.
 Then, run `docker-compose up` to start.
 If running the application the first time, excute the following commands in the service to get Django setup with database:
-- `python3 manage.py makemigrations`
-- `python3 manage.py migrate`
-- `python3 manage.py collectstatic`
-- `python3 manage.py createsuperuser`
+```
+python3 manage.py makemigrations
+python3 manage.py migrate
+python3 manage.py collectstatic
+python3 manage.py createsuperuser
+```
 Finally, restart the service.
 
 ## Hamstery
