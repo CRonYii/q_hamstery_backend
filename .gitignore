@@ -5,6 +5,10 @@
 __pycache__/
 local_settings.py
 
+# Editor
+*.swp
+
+# Application
 .env
 db.sqlite3
 .vscode
