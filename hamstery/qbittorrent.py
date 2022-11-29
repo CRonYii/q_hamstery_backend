@@ -12,7 +12,7 @@ from hamstery.utils import Result, failure, is_video_extension, success
 
 logger = logging.getLogger(__name__)
 
-HAMSTERY_CATEGORY = "hamstery-download"
+HAMSTERY_CATEGORY = "hamstery-download (%s)" % settings.HOST_NAME
 
 UNSCHEDULED_TV_TAG = "unscheduled-tv"
 FETCHING_TV_TAG = "fetching-tv"

@@ -15,6 +15,8 @@ import environ
 
 # Initialise environment variables
 env = environ.Env(
+    BUILDING=(bool, False),
+    HOST_NAME=(str, 'local'),
     HOST=(str, '.localhost'),
     DEBUG=(bool, False),
     SECRET_KEY=(
@@ -26,6 +28,8 @@ env = environ.Env(
     CSRF_TRUSTED_ORIGINS=(str, None),
 )
 environ.Env.read_env('.env')
+
+HOST_NAME = env('HOST_NAME')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -156,58 +160,61 @@ REST_FRAMEWORK = {
     ],
 }
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'backend': {
-            'class': 'logging.FileHandler',
-            'filename': 'app_data/backend.log',
-            'encoding': 'utf8',
-            'formatter': 'simple',
-        },
-        'hamstery': {
-            'class': 'logging.FileHandler',
-            'filename': 'app_data/hamstery.log',
-            'encoding': 'utf8',
-            'formatter': 'verbose',
-        },
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'propagate': True,
-            'level': 'INFO',
-        },
-        'hamstery': {
-            'handlers': ['hamstery', 'console'],
-            'propagate': True,
-            'level': 'INFO',
-        },
-    },
-    'formatters': {
-        'verbose': {
-            'format': '{name} {levelname} {asctime} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {asctime} {message}',
-            'style': '{',
-        },
-    },
-}
+BUILDING = env('BUILDING')
 
-PLEX_CONFIG = {
-    'url': env('PLEX_URL'),
-    'token': env('PLEX_TOKEN'),
-}
-
-QBITTORRENT_CONFIG = {
-    'host': env('QBITTORRENT_HOST'),
-    'port': env('QBITTORRENT_PORT'),
-    'username': env('QBITTORRENT_USERNAME'),
-    'password': env('QBITTORRENT_PASSWORD'),
-}
+if BUILDING is False:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'backend': {
+                'class': 'logging.FileHandler',
+                'filename': 'app_data/backend.log',
+                'encoding': 'utf8',
+                'formatter': 'simple',
+            },
+            'hamstery': {
+                'class': 'logging.FileHandler',
+                'filename': 'app_data/hamstery.log',
+                'encoding': 'utf8',
+                'formatter': 'verbose',
+            },
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'loggers': {
+            'django': {
+                'handlers': ['console'],
+                'propagate': True,
+                'level': 'INFO',
+            },
+            'hamstery': {
+                'handlers': ['hamstery', 'console'],
+                'propagate': True,
+                'level': 'INFO',
+            },
+        },
+        'formatters': {
+            'verbose': {
+                'format': '{name} {levelname} {asctime} {message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{levelname} {asctime} {message}',
+                'style': '{',
+            },
+        },
+    }
+    
+    PLEX_CONFIG = {
+        'url': env('PLEX_URL'),
+        'token': env('PLEX_TOKEN'),
+    }
+    
+    QBITTORRENT_CONFIG = {
+        'host': env('QBITTORRENT_HOST'),
+        'port': env('QBITTORRENT_PORT'),
+        'username': env('QBITTORRENT_USERNAME'),
+        'password': env('QBITTORRENT_PASSWORD'),
+    }
