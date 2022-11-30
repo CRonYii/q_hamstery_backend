@@ -84,6 +84,7 @@ class TvShowManager(models.Manager):
     SEASON_FOLDER_RE = re.compile(r'(?i:season)\s+(\d{1,2})')
 
     async def create_or_update_by_tmdb_id(self, storage: TvStorage, tmdb_id, dirpath=''):
+        logger.info('find metadata for show %s' % (dirpath))
         res = await tmdb_tv_show_details(tmdb_id, lang=storage.lib.lang)
         if not res.success:
             return res
@@ -94,6 +95,7 @@ class TvShowManager(models.Manager):
         number_of_episodes = details['number_of_episodes']
         number_of_seasons = details['number_of_seasons']
         poster_path = value_or(details, 'poster_path', '')
+        logger.info('scan show %s' % (name))
         try:
             # update
             show: TvShow = await storage.shows.aget(path=dirpath)
@@ -120,6 +122,7 @@ class TvShowManager(models.Manager):
                 air_date=air_date
             )
         await sync_to_async(show.save)()
+        logger.info('saved show %s' % (name))
         seasons = details['seasons']
         await show.scan_seasons(seasons)
 
@@ -134,7 +137,7 @@ class TvShowManager(models.Manager):
             return [name, '']
 
     async def scan_for_show(self, storage: TvStorage, dirpath, dir):
-        logger.info('scan show %s - %s' % (dirpath, dir))
+        logger.info('search for show %s - %s' % (dirpath, dir))
         # Find the best matched tv show via tmdb
         [name, year] = TvShowManager.get_title_and_year(dir)
         tmdb_res = await tmdb_search_tv_shows(
@@ -214,6 +217,7 @@ class TvShow(models.Model):
 
 class TvSeasonManager(models.Manager):
     async def create_or_update_by_tmdb_id(self, show: TvShow, tv_tmdb_id, season_number, dirpath=''):
+        logger.info('find metadata for season %s - Season %02d' % (show.name, season_number))
         res = await tmdb_tv_season_details(
             tv_tmdb_id, season_number, lang=show.storage.lib.lang)
         if not res.success:
@@ -251,6 +255,7 @@ class TvSeasonManager(models.Manager):
                 air_date=air_date,
             )
         await sync_to_async(season.save)()
+        logger.info('saved season %s - Season %02d' % (show.name, season_number))
         await season.scan_episodes(episodes)
 
 
@@ -322,6 +327,7 @@ class TvEpisodeManager(models.Manager):
                 air_date=air_date,
             )
         await sync_to_async(episode.save)()
+        logger.info('saved episode %s - Season %02d - Episode %02d' % (season.show.name, season_number, episode_number))
 
 
 class TvEpisode(models.Model):
