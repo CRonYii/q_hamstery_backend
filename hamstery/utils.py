@@ -49,7 +49,7 @@ def list_dir_and_file(path):
 
 def list_root_storages():
     return [make_file_uri_obj('', x.mountpoint) for x in psutil.disk_partitions() if x.fstype ==
-     'ext4' or x.fstype == 'NTFS']
+     'ext4' or x.fstype == 'NTFS' or x.fstype == 'btrfs']
 
 
 def is_subdirectory(parent: str, child: str):
