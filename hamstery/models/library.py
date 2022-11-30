@@ -225,6 +225,7 @@ class TvSeasonManager(models.Manager):
         number_of_episodes = len(episodes)
         poster_path = value_or(details, 'poster_path', show.poster_path)
         air_date = details['air_date']
+        logger.info('scan season %s - Season %02d' % (show.name, season_number))
         try:
             # update
             # should allow one entry per season per show.
@@ -296,6 +297,7 @@ class TvEpisodeManager(models.Manager):
         poster_path = value_or(details, 'still_path', season.poster_path)
         air_date = details['air_date']
         status = TvEpisode.Status.MISSING if dirpath == '' else TvEpisode.Status.READY
+        logger.info('scan episode %s - Season %02d - Episode %02d' % (season.show.name, season_number, episode_number))
 
         try:
             # update
