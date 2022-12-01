@@ -2,6 +2,7 @@ import logging
 import os
 import traceback
 from typing import Any, Callable
+from pathlib import Path
 
 import qbittorrentapi
 from django.conf import settings
@@ -17,6 +18,7 @@ HAMSTERY_CATEGORY = "hamstery-download (%s)" % settings.HOST_NAME
 UNSCHEDULED_TV_TAG = "unscheduled-tv"
 FETCHING_TV_TAG = "fetching-tv"
 DOWNLOADING_TV_TAG = "downloading-tv"
+DOWNLOADED_TV_TAG = "downloaded-tv"
 ORGANIZED_TV_TAG = "organized-tv"
 ERROR_TV_TAG = "error-tv"
 
@@ -121,23 +123,49 @@ def handle_completed_tv_task(task):
     original_name, ext = os.path.splitext(download.filename)
     folder = episode.get_folder()
     filename = "%s (%s)%s" % (episode.get_formatted_filename(), original_name, ext)
-    full_path = os.path.join(folder, filename)
 
     qbt_client.torrents_set_location(folder, hash)
     qbt_client.torrents_rename_file(hash, old_path=download.filename, new_path=filename)
-    episode.set_path(full_path)
-    episode.save()
     qbt_client.torrents_remove_tags(DOWNLOADING_TV_TAG, hash)
-    qbt_client.torrents_add_tags(ORGANIZED_TV_TAG, hash)
+    qbt_client.torrents_add_tags(DOWNLOADED_TV_TAG, hash)
     
-    return success('TV organized')
+    return success('TV download completed')
 
 
 def handle_downloading_tv_tasks():
     handle_tasks(DOWNLOADING_TV_TAG, handle_completed_tv_task, status='completed')
 
 
+def handle_organized_tv_task(task):
+    try:
+        hash = task['hash']
+        download: TvDownload = TvDownload.objects.get(pk=hash)
+    except (TvDownload.DoesNotExist, ValueError):
+        return failure('Cannot find download in DB')
+    episode: TvEpisode = download.episode
+
+    original_name, ext = os.path.splitext(download.filename)
+    folder = episode.get_folder()
+    filename = "%s (%s)%s" % (episode.get_formatted_filename(), original_name, ext)
+    full_path = os.path.join(folder, filename)
+
+    if not Path(full_path).exists():
+        # Skip this time, qbittorent has not finished moving the file to final destination
+        return success(None)
+    episode.set_path(full_path)
+    episode.save()
+    qbt_client.torrents_remove_tags(DOWNLOADED_TV_TAG, hash)
+    qbt_client.torrents_add_tags(ORGANIZED_TV_TAG, hash)
+    
+    return success('TV organized')
+
+
+def handle_completed_tv_tasks():
+    handle_tasks(DOWNLOADED_TV_TAG, handle_organized_tv_task)
+
+
 def qbittorrent_handle_tv_downloads():
+    handle_completed_tv_tasks()
     handle_downloading_tv_tasks()
     handle_fetching_tv_tasks()
     handle_unscheduled_tv_tasks()
