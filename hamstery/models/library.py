@@ -348,11 +348,11 @@ class TvEpisode(models.Model):
 
     objects: TvEpisodeManager = TvEpisodeManager()
 
-    def set_path(self, path: str):
+    def set_path(self, path: str, delete_all=True):
         if len(path) == 0:
             self.path = ''
             self.status = TvEpisode.Status.MISSING
-            self.cancel_related_downloads(True)
+            self.cancel_related_downloads(delete_all)
         else:
             self.path = path
             self.status = TvEpisode.Status.READY

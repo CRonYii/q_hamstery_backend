@@ -120,7 +120,7 @@ def handle_completed_tv_task(task):
     download.done = True
     download.save()
 
-    original_name, ext = os.path.splitext(download.filename)
+    _, original_name, ext = download.get_name_and_ext()
     folder = episode.get_folder()
     filename = "%s (%s)%s" % (episode.get_formatted_filename(), original_name, ext)
 
@@ -128,7 +128,7 @@ def handle_completed_tv_task(task):
     qbt_client.torrents_rename_file(hash, old_path=download.filename, new_path=filename)
     qbt_client.torrents_remove_tags(DOWNLOADING_TV_TAG, hash)
     qbt_client.torrents_add_tags(DOWNLOADED_TV_TAG, hash)
-    
+
     return success('TV download completed')
 
 
@@ -144,7 +144,7 @@ def handle_organized_tv_task(task):
         return failure('Cannot find download in DB')
     episode: TvEpisode = download.episode
 
-    original_name, ext = os.path.splitext(download.filename)
+    _, original_name, ext = download.get_name_and_ext()
     folder = episode.get_folder()
     filename = "%s (%s)%s" % (episode.get_formatted_filename(), original_name, ext)
     full_path = os.path.join(folder, filename)
