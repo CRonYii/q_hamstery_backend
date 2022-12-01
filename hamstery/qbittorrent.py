@@ -90,15 +90,21 @@ def handle_fetching_tv_task(task):
     if len(files) == 0:
         # skip this time, torrents need some time to fecth content...
         return success(None)
-    files = list(filter(lambda f: is_video_extension(f['name']), files))
-    if len(files) == 0:
+    target_files = list(filter(lambda f: is_video_extension(f['name']), files))
+    if len(target_files) == 0:
         return failure('No video file found in download')
-    if len(files) > 1:
+    if len(target_files) > 1:
         return failure('Unsupported multi files torrent episode download')
 
-    filename = files[0]['name']
+    target_file = target_files[0]
+    filename = target_file['name']
+
     download.filename = filename
     download.save()
+    if len(files) != 1:
+        # We only download the video file at this time
+        do_not_download_files = map(lambda f: f['index'], filter(lambda f: f['index'] is not target_file['index'], files))
+        qbt_client.torrents_file_priority(hash, do_not_download_files, priority=0)
     qbt_client.torrents_rename(hash, "%s (%s)" % (task['name'], filename))
     qbt_client.torrents_remove_tags(FETCHING_TV_TAG, hash)
     qbt_client.torrents_add_tags(DOWNLOADING_TV_TAG, hash)
