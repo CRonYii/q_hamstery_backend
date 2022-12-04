@@ -1,16 +1,20 @@
-from typing import Sequence
+import asyncio
 import logging
-from django.db import models
 import os
 import re
-import asyncio
-from datetime import datetime
 import traceback
-from asgiref.sync import async_to_sync, sync_to_async
+from datetime import datetime
+from pathlib import Path
+from typing import Sequence
 
-from ..tmdb import tmdb_search_tv_shows, tmdb_tv_season_details, tmdb_tv_show_details
-from ..utils import failure, list_dir, list_file, success, validate_directory_exist, value_or
+from asgiref.sync import async_to_sync, sync_to_async
+from django.db import models
+
 from ..plex import plex_manager
+from ..tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
+                    tmdb_tv_show_details)
+from ..utils import (failure, list_dir, list_file, success,
+                     validate_directory_exist, value_or)
 
 logger = logging.getLogger(__name__)
 
@@ -348,17 +352,37 @@ class TvEpisode(models.Model):
 
     objects: TvEpisodeManager = TvEpisodeManager()
 
-    def set_path(self, path: str, delete_all=True):
+    def set_path(self, path: str):
         if len(path) == 0:
             self.path = ''
             self.status = TvEpisode.Status.MISSING
-            self.cancel_related_downloads(delete_all)
         else:
             self.path = path
             self.status = TvEpisode.Status.READY
-            if plex_manager:
-                plex_manager.refresh_plex_library_by_filepath(path)
-            self.cancel_related_downloads(False)
+
+    def remove_episode(self):
+        if self.status == TvEpisode.Status.MISSING:
+            return True
+        path = Path(self.path)
+        if path.exists():
+            try:
+                os.remove(self.path)
+            except OSError:
+                return False
+        self.set_path('')
+        if plex_manager:
+            plex_manager.refresh_plex_library_by_filepath(self.get_folder())
+        return True
+
+    def import_video(self, pathstr: str):
+        path = Path(pathstr)
+        if not path.exists():
+            return
+        self.path = pathstr
+        self.status = TvEpisode.Status.READY
+        self.cancel_related_downloads(False)
+        if plex_manager:
+            plex_manager.refresh_plex_library_by_filepath(self.get_folder())
 
     def cancel_related_downloads(self, all: bool):
         if all is True:
@@ -382,7 +406,8 @@ class TvEpisode(models.Model):
     def download_by_url(self, urls):
         if self.status == TvEpisode.Status.READY:
             return False
-        from ..qbittorrent import qbt_client, HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG
+        from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
+                                   qbt_client)
         res = qbt_client.torrents_add(
             urls=urls,
             rename=self.id,
@@ -393,7 +418,6 @@ class TvEpisode(models.Model):
             return True
         else:
             return False
-        
 
     def __str__(self):
         return "%s - S%02dE%02d - %s" % (self.id, self.season_number, self.episode_number, self.name)

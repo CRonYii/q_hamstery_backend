@@ -73,7 +73,6 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     @action(methods=['delete'], detail=True)
     def remove(self, request, pk=None):
         episode: TvEpisode = self.get_object()
-        if episode.status == TvEpisode.Status.READY:
-            episode.set_path('')
-            episode.save()
+        episode.remove_episode()
+        episode.save()
         return Response('Ok')

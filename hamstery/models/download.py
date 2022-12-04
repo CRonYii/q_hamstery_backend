@@ -25,7 +25,7 @@ class TvDownload(Download):
         from ..qbittorrent import qbt_client
         qbt_client.torrents_delete(True, self.hash)
         if self.done is True:
-            self.episode.set_path('', False)
+            self.episode.remove_episode()
             self.episode.save()
         self.delete()
 

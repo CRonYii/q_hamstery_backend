@@ -158,7 +158,7 @@ def handle_organized_tv_task(task):
     if not Path(full_path).exists():
         # Skip this time, qbittorent has not finished moving the file to final destination
         return success(None)
-    episode.set_path(full_path)
+    episode.import_video(full_path)
     episode.save()
     qbt_client.torrents_remove_tags(DOWNLOADED_TV_TAG, hash)
     qbt_client.torrents_add_tags(ORGANIZED_TV_TAG, hash)
