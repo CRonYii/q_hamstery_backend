@@ -221,8 +221,6 @@ class TvShow(models.Model):
 
 class TvSeasonManager(models.Manager):
     async def create_or_update_by_tmdb_id(self, show: TvShow, tv_tmdb_id, season_number, dirpath=''):
-        logger.info('find metadata for season %s - Season %02d' %
-                    (show.name, season_number))
         res = await tmdb_tv_season_details(
             tv_tmdb_id, season_number, lang=show.storage.lib.lang)
         if not res.success:
@@ -262,8 +260,6 @@ class TvSeasonManager(models.Manager):
                 air_date=air_date,
             )
         await sync_to_async(season.save)()
-        logger.info('saved season %s - Season %02d' %
-                    (show.name, season_number))
         await season.scan_episodes(episodes)
 
 
@@ -311,8 +307,6 @@ class TvEpisodeManager(models.Manager):
         poster_path = value_or(details, 'still_path', season.poster_path)
         air_date = details['air_date']
         status = TvEpisode.Status.MISSING if dirpath == '' else TvEpisode.Status.READY
-        logger.info('scan episode %s - Season %02d - Episode %02d' %
-                    (season.show.name, season_number, episode_number))
 
         try:
             # update
@@ -337,8 +331,6 @@ class TvEpisodeManager(models.Manager):
                 air_date=air_date,
             )
         await sync_to_async(episode.save)()
-        logger.info('saved episode %s - Season %02d - Episode %02d' %
-                    (season.show.name, season_number, episode_number))
 
 
 class TvEpisode(models.Model):
