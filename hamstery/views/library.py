@@ -1,11 +1,13 @@
+from asgiref.sync import async_to_sync
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from asgiref.sync import async_to_sync
 
-from ..forms import DownloadForm, TMDBForm
-from ..serializers import TvLibrarySerializer, TvStorageSerializer, TvShowSerializer, TvSeasonSerializer, TvEpisodeSerializer
-from ..models import TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode
+from ..forms import DownloadForm, ImportForm, TMDBForm
+from ..models import TvEpisode, TvLibrary, TvSeason, TvShow, TvStorage
+from ..serializers import (TvEpisodeSerializer, TvLibrarySerializer,
+                           TvSeasonSerializer, TvShowSerializer,
+                           TvStorageSerializer)
 
 # Create your views here.
 
@@ -69,6 +71,19 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
             return Response('Ok')
         else:
             return Response('Invalid download', status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=True)
+    def local_import(self, request, pk=None):
+        episode: TvEpisode = self.get_object()
+        form = ImportForm(request.POST)
+        if not form.is_valid():
+            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+        path = form.cleaned_data['path']
+        if episode.import_video(path) is True:
+            episode.save()
+            return Response('Ok')
+        else:
+            return Response('Invalid import', status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['delete'], detail=True)
     def remove(self, request, pk=None):

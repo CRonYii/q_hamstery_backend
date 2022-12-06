@@ -11,7 +11,10 @@ from ..serializers import TvDownloadSerializer
 class TvDownloadView(viewsets.GenericViewSet):
     queryset = TvDownload.objects.all()
     serializer_class = TvDownloadSerializer
-    filterset_fields = ['done', 'episode']
+    filterset_fields = {
+        'done': ['exact'],
+        'episode': ['exact', 'in'],
+    }
 
     def list(self, request):
         queryset = self.filter_queryset(self.get_queryset())
@@ -31,8 +34,12 @@ class TvDownloadView(viewsets.GenericViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def perform_destroy(self, instance):
-        instance.cancel()
+    def perform_destroy(self, download: TvDownload):
+        if download.done is True and download.episode:
+            download.episode.remove_episode() # remove episode will delete download for us
+            download.episode.save()
+        else:
+            download.cancel()
 
     def append_extra_info(self, download):
         hash = '|'.join(map(lambda d: d['hash'], download))

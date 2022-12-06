@@ -14,7 +14,7 @@ from ..plex import plex_manager
 from ..tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
                     tmdb_tv_show_details)
 from ..utils import (failure, list_dir, list_file, success,
-                     validate_directory_exist, value_or)
+                     validate_directory_exist, value_or, is_video_extension)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class TvLibrary(models.Model):
 
     @async_to_sync
     async def scan(self):
-        res = success(multi=True)
+        res = success()
         storages: Sequence[TvStorage] = self.storages.all()
         routines = []
         async for storage in storages:
@@ -196,7 +196,7 @@ class TvShow(models.Model):
             await self.scan_seasons(seasons)
         except Exception as e:
             logger.error(traceback.format_exc())
-            res.agg(failure('Failed to scan storage %s: %s' %
+            res.agg(failure('Failed to scan show %s: %s' %
                     (self.path, str(e))))
         return res
 
@@ -221,7 +221,8 @@ class TvShow(models.Model):
 
 class TvSeasonManager(models.Manager):
     async def create_or_update_by_tmdb_id(self, show: TvShow, tv_tmdb_id, season_number, dirpath=''):
-        logger.info('find metadata for season %s - Season %02d' % (show.name, season_number))
+        logger.info('find metadata for season %s - Season %02d' %
+                    (show.name, season_number))
         res = await tmdb_tv_season_details(
             tv_tmdb_id, season_number, lang=show.storage.lib.lang)
         if not res.success:
@@ -233,7 +234,8 @@ class TvSeasonManager(models.Manager):
         number_of_episodes = len(episodes)
         poster_path = value_or(details, 'poster_path', show.poster_path)
         air_date = details['air_date']
-        logger.info('scan season %s - Season %02d' % (show.name, season_number))
+        logger.info('scan season %s - Season %02d' %
+                    (show.name, season_number))
         try:
             # update
             # should allow one entry per season per show.
@@ -246,7 +248,8 @@ class TvSeasonManager(models.Manager):
         except TvSeason.DoesNotExist:
             # or create
             if dirpath == '':
-                dirpath = os.path.join(show.path, 'Season %02d' % season_number)
+                dirpath = os.path.join(
+                    show.path, 'Season %02d' % season_number)
                 os.mkdir(dirpath)
             season = TvSeason(
                 show=show,
@@ -259,7 +262,8 @@ class TvSeasonManager(models.Manager):
                 air_date=air_date,
             )
         await sync_to_async(season.save)()
-        logger.info('saved season %s - Season %02d' % (show.name, season_number))
+        logger.info('saved season %s - Season %02d' %
+                    (show.name, season_number))
         await season.scan_episodes(episodes)
 
 
@@ -276,7 +280,8 @@ class TvSeason(models.Model):
 
     objects: TvSeasonManager = TvSeasonManager()
 
-    EPISODE_NAME_RE = re.compile(r's\d{1,2}e(\d{1,4}).*?(mp4|mkv|flv|avi|rmvb|m4p|m4v)$', re.IGNORECASE)
+    EPISODE_NAME_RE = re.compile(
+        r's\d{1,2}e(\d{1,4}).*?(mp4|mkv|flv|avi|rmvb|m4p|m4v)$', re.IGNORECASE)
 
     def get_episode_to_dir_map(self):
         episode_map = dict()
@@ -306,7 +311,8 @@ class TvEpisodeManager(models.Manager):
         poster_path = value_or(details, 'still_path', season.poster_path)
         air_date = details['air_date']
         status = TvEpisode.Status.MISSING if dirpath == '' else TvEpisode.Status.READY
-        logger.info('scan episode %s - Season %02d - Episode %02d' % (season.show.name, season_number, episode_number))
+        logger.info('scan episode %s - Season %02d - Episode %02d' %
+                    (season.show.name, season_number, episode_number))
 
         try:
             # update
@@ -331,7 +337,8 @@ class TvEpisodeManager(models.Manager):
                 air_date=air_date,
             )
         await sync_to_async(episode.save)()
-        logger.info('saved episode %s - Season %02d - Episode %02d' % (season.show.name, season_number, episode_number))
+        logger.info('saved episode %s - Season %02d - Episode %02d' %
+                    (season.show.name, season_number, episode_number))
 
 
 class TvEpisode(models.Model):
@@ -356,6 +363,8 @@ class TvEpisode(models.Model):
         if len(path) == 0:
             self.path = ''
             self.status = TvEpisode.Status.MISSING
+            # It means the download has been removed externally, we will remove the download here as well.
+            self.cancel_related_downloads('done')
         else:
             self.path = path
             self.status = TvEpisode.Status.READY
@@ -363,40 +372,64 @@ class TvEpisode(models.Model):
     def remove_episode(self):
         if self.status == TvEpisode.Status.MISSING:
             return True
-        path = Path(self.path)
-        if path.exists():
-            try:
-                os.remove(self.path)
-            except OSError:
-                return False
+        downalods = self.downloads.filter(done=True)
+        if len(downalods) == 0:
+            path = Path(self.path)
+            if path.exists():
+                try:
+                    os.remove(self.path)
+                except OSError:
+                    return False
         self.set_path('')
         if plex_manager:
             plex_manager.refresh_plex_library_by_filepath(self.get_folder())
         return True
 
-    def import_video(self, pathstr: str):
+    def import_video(self, pathstr: str) -> bool:
         path = Path(pathstr)
-        if not path.exists():
-            return
+        season_folder = Path(self.get_folder())
+        if not path.exists() or not path.is_file() or not is_video_extension(pathstr):
+            logger.warn('Attempt to import invalid file: %s' % pathstr)
+            return False
+        if season_folder not in path.parents:
+            # Need to first move the file to season folder and rename
+            src = pathstr
+            pathstr = os.path.join(
+                self.get_folder(), self.get_formatted_file_destination(src))
+            try:
+                os.rename(src, pathstr)
+            except OSError as e:
+                logger.error('Error when importing episode: %s' % str(e))
+                return False
         self.path = pathstr
         self.status = TvEpisode.Status.READY
-        self.cancel_related_downloads(False)
+        # XXX: Consider a case where importing to an episode with done download?
+        self.cancel_related_downloads('downloading')
         if plex_manager:
             plex_manager.refresh_plex_library_by_filepath(self.get_folder())
+        return True
 
-    def cancel_related_downloads(self, all: bool):
-        if all is True:
+    def cancel_related_downloads(self, type: str):
+        if type == 'all':
             downalods = self.downloads.all()
-        else:
+        elif type == 'downloading':
             downalods = self.downloads.filter(done=False)
+        elif type == 'done':
+            downalods = self.downloads.filter(done=True)
         for download in downalods:
-            logger.info('Cancelled "%s" since a video is imported for this episode' % download.filename)
+            logger.info('Deleted download "%s"' % download.filename)
             download.cancel()
+
+    def get_formatted_file_destination(self, name):
+        _, video_filename = os.path.split(name)
+        original_name, ext = os.path.splitext(video_filename)
+        return "%s (%s)%s" % (self.get_formatted_filename(), original_name, ext)
 
     def get_formatted_filename(self):
         season: TvSeason = self.season
         show: TvShow = season.show
-        filename = "%s - S%02dE%02d - %s" % (show.name, season.season_number, self.episode_number, self.name)
+        filename = "%s - S%02dE%02d - %s" % (
+            show.name, season.season_number, self.episode_number, self.name)
         return filename
 
     def get_folder(self):

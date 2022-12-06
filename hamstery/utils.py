@@ -59,38 +59,29 @@ def is_subdirectory(parent: str, child: str):
 
 class Result:
 
-    def __init__(self, success, payload=None, multi=False):
+    def __init__(self, success, payload=None):
         self.success = success
-        self.multi = multi
-        if payload is not None:
-            self.__payload = [payload]
-        else:
-            self.__payload = None
+        self.multi = False
+        self.__payload = payload
 
     def agg(self, result):
-        if result.success is False:
-            if self.success is True:
-                self.success = False
-                self.__payload = []
         if result.success is not self.success:
             if self.success is True:
                 self.success = False
-                self.__payload = []
+                self.__payload = None
             else:
                 return self
         if self.__payload is None:
-            if self.multi:
-                self.__payload = [result.data()]
-            else:
-                self.__payload = result.data()
+            self.__payload = result.data()
         else:
-            self.multi = True
-            self.__payload = self.__payload + result.data()
+            if self.multi is True:
+                self.__payload = self.__payload + result.data()
+            else:
+                self.multi = True
+                self.__payload = [self.__payload, result.data()]
         return self
 
     def data(self):
-        if not self.multi and self.__payload is not None:
-            return self.__payload[0]
         return self.__payload
 
     def into_response(self):
@@ -113,8 +104,8 @@ def value_or(dict: dict, key, default):
     return value
 
 
-def success(data=None, multi=False) -> Result:
-    return Result(True, data, multi)
+def success(data=None) -> Result:
+    return Result(True, data)
 
 
 def failure(errors) -> Result:

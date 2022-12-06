@@ -24,18 +24,4 @@ class TvDownload(Download):
     def cancel(self):
         from ..qbittorrent import qbt_client
         qbt_client.torrents_delete(True, self.hash)
-        if self.done is True:
-            self.episode.remove_episode()
-            self.episode.save()
         self.delete()
-
-    def get_name_and_ext(self):
-        '''
-        Example 1: if the download name is 'a/b/video.mp4'
-        Returns ('a/b', 'video', '.mp4')
-        Example 2: if the download name is 'video.mp4'
-        Returns ('', 'video', '.mp4')
-        '''
-        possible_dir, video_filename = os.path.split(self.filename)
-        original_name, ext = os.path.splitext(video_filename)
-        return possible_dir, original_name, ext

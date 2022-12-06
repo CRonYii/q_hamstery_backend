@@ -9,6 +9,10 @@ class DownloadForm(forms.Form):
     url = forms.CharField()
 
 
+class ImportForm(forms.Form):
+    path = forms.CharField()
+
+
 class LoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField()
