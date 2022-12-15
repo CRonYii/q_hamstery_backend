@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import traceback
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Sequence
@@ -389,7 +390,7 @@ class TvEpisode(models.Model):
             pathstr = os.path.join(
                 self.get_folder(), self.get_formatted_file_destination(src))
             try:
-                os.rename(src, pathstr)
+                shutil.move(src, pathstr)
             except OSError as e:
                 logger.error('Error when importing episode: %s' % str(e))
                 return False
