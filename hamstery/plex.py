@@ -63,16 +63,20 @@ class PlexManager:
             logger.warn('Failed to refresh Plex library <%s> "%s"' %
                         (lib['title'], path))
 
-    def refresh_plex_library_by_filepath(self, filepath: str):
+    def refresh_plex_library_by_filepath(self, filepath: str) -> bool:
         if not self.enabled:
-            return
-        path = Path(filepath)
-        if path.is_file():
-            path = path.parent
-        filepath = str(path.absolute())
-        libs = self.__find_libraries_by_path(filepath)
-        for lib in libs:
-            self.__refresh(lib, filepath)
+            return True
+        try:
+            path = Path(filepath)
+            if path.is_file():
+                path = path.parent
+            filepath = str(path.absolute())
+            libs = self.__find_libraries_by_path(filepath)
+            for lib in libs:
+                self.__refresh(lib, filepath)
+            return True
+        except:
+            return False
 
 
 if PLEX_CONFIG is not None:
