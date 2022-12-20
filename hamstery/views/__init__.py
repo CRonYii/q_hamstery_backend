@@ -1,4 +1,4 @@
-from .indexer import TorznabIndexerView
+from .indexer import IndexerView, TorznabView
 from .library import TvLibraryView, TvStorageView, TvShowView, TvSeasonView, TvEpisodeView
 from .download import TvDownloadView
 from .user import *

@@ -1,11 +1,15 @@
 from django.contrib import admin
-from .models import  TorznabIndexer, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload
+from .models import Indexer, Torznab, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload
 
 # Register your models here.
 
-@admin.register(TorznabIndexer)
-class TorznabIndexerAdmin(admin.ModelAdmin):
-    list_display = ['name', 'url', 'apikey']
+@admin.register(Indexer)
+class IndexerAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+
+@admin.register(Torznab)
+class TorznabAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'url', 'apikey']
 
 class TvStorageInline(admin.TabularInline):
     model = TvStorage
