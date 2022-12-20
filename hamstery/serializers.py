@@ -11,7 +11,7 @@ class IndexerSerializer(serializers.ModelSerializer):
 class TorznabSerializer(serializers.ModelSerializer):
     class Meta:
         model = Torznab
-        fields = ('id', 'name', 'url', 'apikey')
+        fields = ('id', 'name', 'url', 'apikey', 'cat')
 
 
 class TvEpisodeSerializer(serializers.ModelSerializer):

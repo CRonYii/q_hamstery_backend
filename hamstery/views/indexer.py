@@ -28,3 +28,11 @@ class TorznabView(viewsets.ModelViewSet):
         query = request.GET['query'] if 'query' in request.GET else ''
         result = indexer.search(query)
         return result.into_response()
+
+    @action(methods=['get'], detail=True)
+    def caps(self, request, pk=None):
+        indexer: Torznab = self.get_object()
+        result = indexer.caps()
+        return result.into_response()
+
+    

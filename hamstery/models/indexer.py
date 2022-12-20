@@ -25,17 +25,18 @@ class Indexer(models.Model):
 class Torznab(Indexer):
     url = models.CharField(max_length=1024)
     apikey = models.CharField(max_length=128)
+    cat = models.CharField(max_length=128, blank=True, default='')
 
     def search(self, query='') -> Result:
         try:
             r = requests.get(self.url, params={
-                             'apikey': self.apikey, 'q': query, 't': 'search', 'cat': '', })
+                             'apikey': self.apikey, 'q': query, 't': 'search', 'cat': self.cat, })
             if not r.ok:
                 return failure('Torznab %s(%s): HTTP Error %d %s' % (self.name, self.url, r.status_code, r.reason))
             tree = ElementTree.fromstring(r.content)
             if tree.tag == "error":
                 return failure(tree.get('description'))
-            channel = tree[0]
+            channel = tree.find('channel')
             torrents = []
             for item in channel.iter('item'):
                 try:
@@ -50,6 +51,35 @@ class Torznab(Indexer):
                     continue
 
             return success(torrents)
+        except requests.exceptions.RequestException as e:
+            logger.warning(str(e))
+            return failure(str(e))
+
+    def caps(self):
+        try:
+            r = requests.get(self.url, params={
+                             'apikey': self.apikey, 't': 'caps', })
+            if not r.ok:
+                return failure('Torznab %s(%s): HTTP Error %d %s' % (self.name, self.url, r.status_code, r.reason))
+            tree = ElementTree.fromstring(r.content)
+            if tree.tag == "error":
+                return failure(tree.get('description'))
+            caps = {
+                'searching': {},
+                'categories': [],
+            }
+            searching = tree.find('searching')
+            for item in searching.getchildren():
+                caps['searching'][item.tag] = item.attrib
+            categories = tree.find('categories')
+            for item in categories.getchildren():
+                cat = item.attrib
+                cat['subcat'] = []
+                for subcat in item.getchildren():
+                    cat['subcat'].append(subcat.attrib)
+                caps['categories'].append(cat)
+
+            return success(caps)
         except requests.exceptions.RequestException as e:
             logger.warning(str(e))
             return failure(str(e))
