@@ -1,7 +1,8 @@
-from datetime import datetime
 import logging
+from datetime import datetime
 
 import qbittorrentapi
+import tzlocal
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -21,7 +22,7 @@ def qbt_start():
     except qbittorrentapi.LoginFailed as e:
         logger.error(e)
         return False
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(timezone=str(tzlocal.get_localzone()))
     scheduler.add_job(qbittorrent_monitor_step,
                       trigger=IntervalTrigger(seconds=1),
                       id="qbt_monitor",
@@ -33,7 +34,7 @@ def qbt_start():
 
 
 def show_subscription_monitor_start():
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(timezone=str(tzlocal.get_localzone()))
     job = scheduler.add_job(show_subscription_monitor_step,
                       trigger=IntervalTrigger(seconds=3600),
                       id="show_subscription_monitor",
