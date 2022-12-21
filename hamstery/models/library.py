@@ -293,6 +293,24 @@ class TvSeason(models.Model):
                 episode_map[episode_number] = fullpath
         return episode_map
 
+    @async_to_sync
+    async def scan(self):
+        res = success()
+        try:
+            tmdb_res = await tmdb_tv_season_details(self.show.tmdb_id, self.season_number, lang=self.show.storage.lib.lang)
+            if not tmdb_res.success:
+                return tmdb_res
+            details = tmdb_res.data()
+            episodes = details['episodes']
+            logger.info('scan season %s - Season %02d' %
+                        (self.show.name, self.season_number))
+            await self.scan_episodes(episodes)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            res.agg(failure('Failed to scan season %s: %s' %
+                    (self.path, str(e))))
+        return res
+
     async def scan_episodes(self, episodes):
         # We should not need to worry about clearing episodes unless # of episodes is reduced (which is unlikely)
         episode_map = self.get_episode_to_dir_map()
@@ -310,6 +328,7 @@ class TvSeason(models.Model):
         results = {}
         for ep in eps:
             adjusted_ep_n = ep.episode_number + offset
+
             def filter_torrent(torrent):
                 title = torrent['title']
                 if exclude_re and exclude_re.search(title):
@@ -436,7 +455,8 @@ class TvEpisode(models.Model):
         if type == 'all':
             downloads = self.downloads.all()
         elif type == 'downloading':
-            downloads = self.downloads.filter(Q(monitoredtvdownload__isnull=False) | Q(done=False))
+            downloads = self.downloads.filter(
+                Q(monitoredtvdownload__isnull=False) | Q(done=False))
         elif type == 'done':
             downloads = self.downloads.filter(done=True)
         for download in downloads:

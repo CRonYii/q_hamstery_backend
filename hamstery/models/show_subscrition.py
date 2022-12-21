@@ -28,9 +28,8 @@ class ShowSubscription(models.Model):
             return
         from hamstery.models import MonitoredTvDownload
         results = self.season.search_episodes_from_indexer(self.query, self.indexer, self.offset, self.exclude)
-        # TODO: implement per season scan
-        # self.season.show.storage.lib # pre-fetch lib here
-        # self.season.show.scan()
+        self.season.show.storage.lib # pre-fetch lib here
+        self.season.scan()
         episodes: List[TvEpisode] = self.season.episodes.all()
         for ep in episodes:
             torrents = results[ep.episode_number]
@@ -74,6 +73,7 @@ class ShowSubscription(models.Model):
 
 
 def show_subscription_monitor_step():
+    logger.info('show_subscription_monitor_step')
     subs = ShowSubscription.objects.filter(done=False)
     for sub in subs:
         sub.monitor_step()

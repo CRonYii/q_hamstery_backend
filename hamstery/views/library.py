@@ -75,6 +75,12 @@ class TvSeasonView(viewsets.ReadOnlyModelViewSet):
             return Response('Indexer does not exist', status=status.HTTP_400_BAD_REQUEST)
         return Response(season.search_episodes_from_indexer(query, indexer, offset, exclude))
 
+    @action(methods=['post'], detail=True)
+    def scan(self, request, pk=None):
+        season: TvSeason = TvSeason.objects.get(pk=pk)
+        season.show.storage.lib  # pre-fetch lib here
+        return season.scan().into_response()
+
 
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
