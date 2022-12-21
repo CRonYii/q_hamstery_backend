@@ -3,9 +3,10 @@ import json
 import os
 import re
 from functools import wraps
-from typing import Sequence
 from pathlib import Path
+from typing import Sequence
 
+import cn2an
 import psutil
 from django import forms
 from django.core.exceptions import ValidationError
@@ -49,13 +50,14 @@ def list_dir_and_file(path):
 
 def list_root_storages():
     return [make_file_uri_obj('', x.mountpoint) for x in psutil.disk_partitions() if x.fstype ==
-     'ext4' or x.fstype == 'NTFS' or x.fstype == 'btrfs']
+            'ext4' or x.fstype == 'NTFS' or x.fstype == 'btrfs']
 
 
 def is_subdirectory(parent: str, child: str):
     parent = Path(parent)
     child = Path(child)
     return parent in child.parents
+
 
 class Result:
 
@@ -176,3 +178,29 @@ VIDEO_FILE_RE = re.compile(r'.*?\.(mp4|mkv|flv|avi|rmvb|m4p|m4v)$')
 
 def is_video_extension(name):
     return VIDEO_FILE_RE.match(name)
+
+
+EPISODE_NUMBER_RE = re.compile(
+    r'Ep|EP|[ E第【[](\d{1,4}|[零一二三四五六七八九十百千]{1,6})(v\d)?[ 話话回集\].】]')
+
+
+def get_episode_number_from_title(title: str) -> int:
+    name, ext = os.path.splitext(title)
+    try:
+        ep = int(name)
+        return ep
+    except ValueError:
+        pass
+
+    match = EPISODE_NUMBER_RE.search(name)
+    if not match:
+        return None
+
+    ep = match.group(1)
+    try:
+        ep = int(ep)
+        return ep
+    except ValueError:
+        pass
+
+    return cn2an.cn2an(ep, mode='smart')

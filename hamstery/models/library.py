@@ -2,20 +2,23 @@ import asyncio
 import logging
 import os
 import re
-import traceback
 import shutil
+import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Sequence
+from typing import List, Sequence
 
 from asgiref.sync import async_to_sync, sync_to_async
 from django.db import models
+from django.db.models import Q
 
-from ..plex import plex_manager
-from ..tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
-                    tmdb_tv_show_details)
-from ..utils import (failure, list_dir, list_file, success,
-                     validate_directory_exist, value_or, is_video_extension)
+from hamstery.models import Indexer
+from hamstery.plex import plex_manager
+from hamstery.tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
+                           tmdb_tv_show_details)
+from hamstery.utils import (failure, get_episode_number_from_title,
+                            is_video_extension, list_dir, list_file, success,
+                            validate_directory_exist, value_or)
 
 logger = logging.getLogger(__name__)
 
@@ -248,7 +251,7 @@ class TvSeasonManager(models.Manager):
             # or create
             if dirpath == '':
                 dirpath = os.path.join(
-                    show.path, 'Season %02d' % season_number)
+                    show.path, 'Season %d' % season_number)
                 os.mkdir(dirpath)
             season = TvSeason(
                 show=show,
@@ -297,6 +300,33 @@ class TvSeason(models.Model):
             episode_number = episode['episode_number']
             path = episode_map.get(episode_number, '')
             await TvEpisode.objects.create_or_update_by_episode_number(season=self, details=episode, dirpath=path)
+
+    def search_episodes_from_indexer(self, query: str, indexer: Indexer, offset=0, exclude=''):
+        eps: List[TvEpisode] = self.episodes.all()
+        exclude_re = None
+        if exclude != '':
+            exclude_re = re.compile(exclude)
+
+        results = {}
+        for ep in eps:
+            adjusted_ep_n = ep.episode_number + offset
+            def filter_torrent(torrent):
+                title = torrent['title']
+                if exclude_re and exclude_re.search(title):
+                    return False
+                return get_episode_number_from_title(title) == adjusted_ep_n
+            result = indexer.search(
+                '%s %02d' % (query, adjusted_ep_n))
+            if result.success != True:
+                results[ep.episode_number] = []
+                continue
+            torrents = result.data()
+            matched_torrents = list(filter(filter_torrent, torrents))
+            results[ep.episode_number] = matched_torrents
+        return results
+
+    def __str__(self):
+        return '%s - S%02d (%s)' % (self.show.name, self.season_number, self.name)
 
 
 class TvEpisodeManager(models.Manager):
@@ -378,7 +408,7 @@ class TvEpisode(models.Model):
             plex_manager.refresh_plex_library_by_filepath(self.get_folder())
         return True
 
-    def import_video(self, pathstr: str) -> bool:
+    def import_video(self, pathstr: str, manually: bool) -> bool:
         path = Path(pathstr)
         season_folder = Path(self.get_folder())
         if not path.exists() or not path.is_file() or not is_video_extension(pathstr):
@@ -396,20 +426,20 @@ class TvEpisode(models.Model):
                 return False
         self.path = pathstr
         self.status = TvEpisode.Status.READY
-        # XXX: Consider a case where importing to an episode with done download?
-        self.cancel_related_downloads('downloading')
+        if manually is True:
+            self.cancel_related_downloads('downloading')
         if plex_manager:
             plex_manager.refresh_plex_library_by_filepath(self.get_folder())
         return True
 
     def cancel_related_downloads(self, type: str):
         if type == 'all':
-            downalods = self.downloads.all()
+            downloads = self.downloads.all()
         elif type == 'downloading':
-            downalods = self.downloads.filter(done=False)
+            downloads = self.downloads.filter(Q(monitoredtvdownload__isnull=False) | Q(done=False))
         elif type == 'done':
-            downalods = self.downloads.filter(done=True)
-        for download in downalods:
+            downloads = self.downloads.filter(done=True)
+        for download in downloads:
             logger.info('Deleted download "%s"' % download.filename)
             download.cancel()
 
@@ -429,8 +459,15 @@ class TvEpisode(models.Model):
         season: TvSeason = self.season
         return season.path
 
+    def is_manually_ready(self) -> bool:
+        from hamstery.models import MonitoredTvDownload
+        if self.status != TvEpisode.Status.READY:
+            return False
+        downloads = MonitoredTvDownload.objects.filter(episode=self, done=True)
+        return len(downloads) == 0
+
     def download_by_url(self, urls):
-        if self.status == TvEpisode.Status.READY:
+        if self.is_manually_ready():
             return False
         from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
                                    qbt_client)
@@ -439,6 +476,20 @@ class TvEpisode(models.Model):
             rename=self.id,
             category=HAMSTERY_CATEGORY,
             tags=UNSCHEDULED_TV_TAG,
+            is_paused=False)
+        if res == 'Ok.':
+            return True
+        else:
+            return False
+
+    def monitor_download_by_url(self, sub_id, urls):
+        from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG, MONITORED_TV_TAG,
+                                   qbt_client)
+        res = qbt_client.torrents_add(
+            urls=urls,
+            rename='%s,%s' % (self.id, sub_id),
+            category=HAMSTERY_CATEGORY,
+            tags=[UNSCHEDULED_TV_TAG, MONITORED_TV_TAG],
             is_paused=False)
         if res == 'Ok.':
             return True

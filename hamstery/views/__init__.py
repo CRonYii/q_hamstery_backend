@@ -3,3 +3,4 @@ from .library import TvLibraryView, TvStorageView, TvShowView, TvSeasonView, TvE
 from .download import TvDownloadView
 from .user import *
 from .media import *
+from .show_subscription import *

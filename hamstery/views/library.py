@@ -3,8 +3,8 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from ..forms import DownloadForm, ImportForm, TMDBForm
-from ..models import TvEpisode, TvLibrary, TvSeason, TvShow, TvStorage
+from ..forms import DownloadForm, ImportForm, SeasonSearchForm, TMDBForm
+from ..models import TvEpisode, TvLibrary, TvSeason, TvShow, TvStorage, Indexer
 from ..serializers import (TvEpisodeSerializer, TvLibrarySerializer,
                            TvSeasonSerializer, TvShowSerializer,
                            TvStorageSerializer)
@@ -29,15 +29,18 @@ class TvStorageView(viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=True, url_name='add-show', url_path='add-show')
     def add_show(self, request, pk=None):
-        storage: TvStorage = TvStorage.objects.prefetch_related('lib').get(pk=pk)
+        storage: TvStorage = TvStorage.objects.prefetch_related(
+            'lib').get(pk=pk)
         form = TMDBForm(request.POST)
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
         tmdb_id = form.cleaned_data['tmdb_id']
         if storage.shows.filter(tmdb_id__exact=tmdb_id).exists():
             return Response('Show already exists', status=status.HTTP_400_BAD_REQUEST)
-        async_to_sync(TvShow.objects.create_or_update_by_tmdb_id)(storage, tmdb_id)
+        async_to_sync(TvShow.objects.create_or_update_by_tmdb_id)(
+            storage, tmdb_id)
         return Response('Ok')
+
 
 class TvShowView(viewsets.ReadOnlyModelViewSet):
     queryset = TvShow.objects.all()
@@ -47,13 +50,31 @@ class TvShowView(viewsets.ReadOnlyModelViewSet):
     @action(methods=['post'], detail=True)
     def scan(self, request, pk=None):
         show: TvShow = TvShow.objects.prefetch_related('storage').get(pk=pk)
-        show.storage.lib # pre-fetch lib here
+        show.storage.lib  # pre-fetch lib here
         return show.scan().into_response()
+
 
 class TvSeasonView(viewsets.ReadOnlyModelViewSet):
     queryset = TvSeason.objects.all()
     serializer_class = TvSeasonSerializer
     filterset_fields = ['show']
+
+    @action(methods=['get'], detail=True)
+    def search(self, request, pk=None):
+        season: TvSeason = self.get_object()
+        form = SeasonSearchForm(request.POST)
+        if not form.is_valid():
+            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+        query = form.cleaned_data['query']
+        indexer_id = form.cleaned_data['indexer_id']
+        offset = form.cleaned_data['offset'] or 0
+        exclude = form.cleaned_data['exclude'] or ''
+        try:
+            indexer = Indexer.objects.get(pk=indexer_id)
+        except Indexer.DoesNotExist:
+            return Response('Indexer does not exist', status=status.HTTP_400_BAD_REQUEST)
+        return Response(season.search_episodes_from_indexer(query, indexer, offset, exclude))
+
 
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
@@ -79,7 +100,7 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
         path = form.cleaned_data['path']
-        if episode.import_video(path) is True:
+        if episode.import_video(path, True) is True:
             episode.save()
             return Response('Ok')
         else:

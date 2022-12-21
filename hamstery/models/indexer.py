@@ -20,6 +20,9 @@ class Indexer(models.Model):
         except Torznab.DoesNotExist:
             pass
         return failure('Indexer does not support searching')
+    
+    def __str__(self):
+        return self.name
 
 
 class Torznab(Indexer):

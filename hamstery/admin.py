@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Indexer, Torznab, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload
+from .models import Indexer, Torznab, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload, MonitoredTvDownload, ShowSubscription
 
 # Register your models here.
 
@@ -46,3 +46,11 @@ class TvSeasonAdmin(admin.ModelAdmin):
 @admin.register(TvDownload)
 class TvDownloadAdmin(admin.ModelAdmin):
     list_display = ['hash', 'episode', 'done']
+
+@admin.register(MonitoredTvDownload)
+class MonitoredTvDownloadAdmin(admin.ModelAdmin):
+    list_display = ['subscription', 'hash', 'episode', 'done']
+
+@admin.register(ShowSubscription)
+class ShowSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'season', 'query']

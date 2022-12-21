@@ -1,8 +1,8 @@
 from django.db import models
 import logging
-import os
 
 from hamstery.models.library import TvEpisode
+from hamstery.models.show_subscrition import ShowSubscription
 
 logger = logging.getLogger(__name__)
 
@@ -25,3 +25,7 @@ class TvDownload(Download):
         from ..qbittorrent import qbt_client
         qbt_client.torrents_delete(True, self.hash)
         self.delete()
+
+class MonitoredTvDownload(TvDownload):
+    subscription = models.ForeignKey(
+        ShowSubscription, related_name='downloads', on_delete=models.CASCADE, parent_link=True)
