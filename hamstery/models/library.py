@@ -321,7 +321,8 @@ class TvSeason(models.Model):
             episode_number = episode['episode_number']
             path = episode_map.get(episode_number, '')
             await TvEpisode.objects.create_or_update_by_episode_number(season=self, details=episode, dirpath=path)
-            ep_number_set.remove(episode_number)
+            if episode_number in ep_number_set:
+                ep_number_set.remove(episode_number)
         for ep_n in ep_number_set:
             async for ep in self.episodes.filter(episode_number=ep_n):
                 await sync_to_async(ep.delete)()
