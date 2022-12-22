@@ -11,7 +11,3 @@ class HamsteryConfig(AppConfig):
 
     def ready(self) -> None:
         logger.info('Timezone: %s' % (tzlocal.get_localzone()))
-        from django.conf import settings
-        if settings.BUILDING is False:
-            from . import background_scheduler
-            background_scheduler.start()

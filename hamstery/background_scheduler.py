@@ -3,7 +3,7 @@ from datetime import datetime
 
 import qbittorrentapi
 import tzlocal
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from hamstery.models.show_subscrition import show_subscription_monitor_step
@@ -11,8 +11,9 @@ from hamstery.qbittorrent import qbittorrent_monitor_step, qbt_client
 
 logger = logging.getLogger(__name__)
 
+scheduler = BlockingScheduler(timezone=str(tzlocal.get_localzone()))
 
-def qbt_start():
+def schedule_qbittorrent_job():
     try:
         qbt_client.auth_log_in()
         # display qBittorrent info
@@ -22,19 +23,16 @@ def qbt_start():
     except qbittorrentapi.LoginFailed as e:
         logger.error(e)
         return False
-    scheduler = BackgroundScheduler(timezone=str(tzlocal.get_localzone()))
     scheduler.add_job(qbittorrent_monitor_step,
                       trigger=IntervalTrigger(seconds=1),
                       id="qbt_monitor",
                       max_instances=1,
                       )
-    scheduler.start()
     logger.info("Started qbittorrent monitor")
     return True
 
 
-def show_subscription_monitor_start():
-    scheduler = BackgroundScheduler(timezone=str(tzlocal.get_localzone()))
+def schedule_show_subscription_monitor_job():
     job = scheduler.add_job(show_subscription_monitor_step,
                       trigger=IntervalTrigger(seconds=3600),
                       id="show_subscription_monitor",
@@ -43,8 +41,12 @@ def show_subscription_monitor_start():
     job.modify(next_run_time=datetime.now())
     scheduler.start()
     logger.info("Started show subscription monitor")
+    return True
 
 
 def start():
-    qbt_start()
-    show_subscription_monitor_start()
+    if schedule_qbittorrent_job() and schedule_show_subscription_monitor_job():
+        scheduler.start()
+
+if __name__ == '__main__':
+    start()
