@@ -25,8 +25,9 @@ class ShowSubscription(models.Model):
     done = models.BooleanField(default=False)
 
     def monitor_step(self):
-        self.done = self.check_done()
-        if self.done:
+        if self.check_done() is True:
+            self.done = True
+            self.save()
             return
         from hamstery.models import MonitoredTvDownload
         results = self.season.search_episodes_from_indexer(
