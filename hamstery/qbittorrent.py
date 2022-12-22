@@ -24,16 +24,20 @@ ORGANIZED_TV_TAG = "organized-tv"
 MONITORED_TV_TAG = "monitored-tv"
 ERROR_TV_TAG = "error-tv"
 
-QBITTORRENT_CONFIG = getattr(settings, "QBITTORRENT_CONFIG", None)
-if QBITTORRENT_CONFIG is None:
-    raise ValueError('Please configure QBITTORRENT_CONFIG in django settings.')
+if settings.BUILDING is False:
+    QBITTORRENT_CONFIG = getattr(settings, "QBITTORRENT_CONFIG", None)
+    if QBITTORRENT_CONFIG is None:
+        raise ValueError('Please configure QBITTORRENT_CONFIG in django settings.')
 
-qbt_client = qbittorrentapi.Client(
-    host=QBITTORRENT_CONFIG['host'],
-    port=QBITTORRENT_CONFIG['port'],
-    username=QBITTORRENT_CONFIG['username'],
-    password=QBITTORRENT_CONFIG['password'],
-)
+    qbt_client = qbittorrentapi.Client(
+        host=QBITTORRENT_CONFIG['host'],
+        port=QBITTORRENT_CONFIG['port'],
+        username=QBITTORRENT_CONFIG['username'],
+        password=QBITTORRENT_CONFIG['password'],
+    )
+else:
+    # dummy export
+    qbt_client = None
 
 
 def handle_tasks(tag, handler: Callable[[Any], Result], status=None):
