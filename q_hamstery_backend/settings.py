@@ -132,12 +132,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
 TIME_ZONE = env('TZ')
 
+USE_I18N = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -160,8 +157,6 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend'
     ],
 }
-
-USE_TZ = True
 
 BUILDING = env('BUILDING')
 
