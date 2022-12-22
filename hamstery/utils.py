@@ -185,14 +185,13 @@ EPISODE_NUMBER_RE = re.compile(
 
 
 def get_episode_number_from_title(title: str) -> int:
-    name, ext = os.path.splitext(title)
     try:
-        ep = int(name)
+        ep = int(title)
         return ep
     except ValueError:
         pass
 
-    match = EPISODE_NUMBER_RE.search(name)
+    match = EPISODE_NUMBER_RE.search(title)
     if not match:
         return None
 
