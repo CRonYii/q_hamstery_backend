@@ -1,12 +1,10 @@
 import logging
-from datetime import datetime
 
 import qbittorrentapi
 import tzlocal
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from hamstery.models.show_subscrition import show_subscription_monitor_step
 from hamstery.qbittorrent import qbittorrent_monitor_step, qbt_client
 
 logger = logging.getLogger(__name__)
@@ -32,19 +30,8 @@ def schedule_qbittorrent_job():
     return True
 
 
-def schedule_show_subscription_monitor_job():
-    job = scheduler.add_job(show_subscription_monitor_step,
-                      trigger=IntervalTrigger(seconds=3600),
-                      id="show_subscription_monitor",
-                      max_instances=1,
-                      )
-    job.modify(next_run_time=datetime.now())
-    logger.info("Started show subscription monitor")
-    return True
-
-
 def start():
-    if schedule_qbittorrent_job() and schedule_show_subscription_monitor_job():
+    if schedule_qbittorrent_job():
         scheduler.start()
 
 if __name__ == '__main__':

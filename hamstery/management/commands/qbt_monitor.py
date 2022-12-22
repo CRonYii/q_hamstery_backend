@@ -2,13 +2,13 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from hamstery import background_scheduler
+from hamstery import qbt_monitor
 
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = 'Run Hamstery background scheduler'
+    help = 'Run qbittorrent monitor'
 
     def handle(self, *args, **options):
-        background_scheduler.start()
+        qbt_monitor.start()
