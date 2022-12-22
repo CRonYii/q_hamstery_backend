@@ -39,7 +39,6 @@ def schedule_show_subscription_monitor_job():
                       max_instances=1,
                       )
     job.modify(next_run_time=datetime.now())
-    scheduler.start()
     logger.info("Started show subscription monitor")
     return True
 
