@@ -160,6 +160,8 @@ REST_FRAMEWORK = {
     ],
 }
 
+USE_TZ = True
+
 BUILDING = env('BUILDING')
 
 if BUILDING is False:
