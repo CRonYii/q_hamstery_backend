@@ -1,9 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 
-from ..models import TvDownload
+from ..models import TvDownload, MonitoredTvDownload
 from ..qbittorrent import qbt_client
-from ..serializers import TvDownloadSerializer
+from ..serializers import TvDownloadSerializer, MonitoredTvDownloadSerializer
 
 # Create your views here.
 
@@ -60,3 +60,10 @@ class TvDownloadView(viewsets.GenericViewSet):
             extra['upspeed'] = i['upspeed']
             d['extra_info'] = extra
         return download
+
+class MonitoredDownloadView(viewsets.ReadOnlyModelViewSet):
+    queryset = MonitoredTvDownload.objects.all()
+    serializer_class = MonitoredTvDownloadSerializer
+    filterset_fields = {
+        'subscription': ['exact'],
+    }

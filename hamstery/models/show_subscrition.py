@@ -1,13 +1,15 @@
-from typing import List
-from django.db import models
 import logging
+from typing import List
 
-from hamstery.models import TvEpisode, TvSeason, Indexer
-from hamstery.utils import success
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
+from hamstery.models import Indexer, TvEpisode, TvSeason
 
 logger = logging.getLogger(__name__)
 
 # Create your models here.
+
 
 class ShowSubscription(models.Model):
     season = models.ForeignKey(
@@ -16,9 +18,9 @@ class ShowSubscription(models.Model):
         Indexer, related_name='subs', on_delete=models.CASCADE, parent_link=True)
     query = models.CharField(max_length=1024)
     # the smaller the more prioritized
-    priority = models.PositiveIntegerField()
+    priority = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     # Used when the episode counts includes previous seasons
-    offset = models.PositiveIntegerField(blank=True, null=True)
+    offset = models.PositiveIntegerField(blank=True, default=0, validators=[MinValueValidator(0)])
     exclude = models.CharField(max_length=512, blank=True, default='')
     done = models.BooleanField(default=False)
 
@@ -27,8 +29,9 @@ class ShowSubscription(models.Model):
         if self.done:
             return
         from hamstery.models import MonitoredTvDownload
-        results = self.season.search_episodes_from_indexer(self.query, self.indexer, self.offset, self.exclude)
-        self.season.show.storage.lib # pre-fetch lib here
+        results = self.season.search_episodes_from_indexer(
+            self.query, self.indexer, self.offset, self.exclude)
+        self.season.show.storage.lib  # pre-fetch lib here
         self.season.scan()
         episodes: List[TvEpisode] = self.season.episodes.all()
         for ep in episodes:
@@ -37,7 +40,8 @@ class ShowSubscription(models.Model):
                 continue
             if ep.status == TvEpisode.Status.READY:
                 # If episode already exist, checks if the episode is downloaded by a subscriotion
-                downloads = MonitoredTvDownload.objects.filter(episode=ep, done=True)
+                downloads = MonitoredTvDownload.objects.filter(
+                    episode=ep, done=True)
                 if len(downloads) == 0:
                     # Skip since episode is downloaded/imported by user
                     continue
@@ -60,7 +64,8 @@ class ShowSubscription(models.Model):
         for ep in episodes:
             if ep.status == TvEpisode.Status.MISSING:
                 return False
-            downloads = MonitoredTvDownload.objects.filter(episode=ep, done=True)
+            downloads = MonitoredTvDownload.objects.filter(
+                episode=ep, done=True)
             if len(downloads) == 0:
                 continue
             if downloads[0].subscription.priority > self.priority:

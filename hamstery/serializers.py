@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Indexer, Torznab, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload, ShowSubscription
+from .models import Indexer, Torznab, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload, MonitoredTvDownload, ShowSubscription
 
 
 class IndexerSerializer(serializers.ModelSerializer):
@@ -61,7 +61,15 @@ class TvDownloadSerializer(serializers.ModelSerializer):
         model = TvDownload
         fields = ('hash', 'done', 'episode', 'filename')
 
+
+class MonitoredTvDownloadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MonitoredTvDownload
+        fields = ('hash', 'done', 'episode', 'filename', 'subscription')
+
+
 class ShowSubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShowSubscription
-        fields = ('season', 'indexer', 'query', 'priority', 'offset', 'exclude', 'done')
+        fields = ('id', 'season', 'indexer', 'query',
+                  'priority', 'offset', 'exclude', 'done')

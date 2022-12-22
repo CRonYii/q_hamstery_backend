@@ -62,7 +62,7 @@ class TvSeasonView(viewsets.ReadOnlyModelViewSet):
     @action(methods=['get'], detail=True)
     def search(self, request, pk=None):
         season: TvSeason = self.get_object()
-        form = SeasonSearchForm(request.POST)
+        form = SeasonSearchForm(request.GET)
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
         query = form.cleaned_data['query']
