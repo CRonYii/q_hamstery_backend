@@ -18,6 +18,7 @@ env = environ.Env(
     BUILDING=(bool, False),
     HOST_NAME=(str, 'local'),
     HOST=(str, '.localhost'),
+    TZ=(str, 'UTC'),
     DEBUG=(bool, False),
     SECRET_KEY=(
         str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
@@ -135,7 +136,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+TIME_ZONE = env('TZ')
 
 
 # Static files (CSS, JavaScript, Images)
