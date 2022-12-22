@@ -28,4 +28,7 @@ class TvDownload(Download):
 
 class MonitoredTvDownload(TvDownload):
     subscription = models.ForeignKey(
-        ShowSubscription, related_name='downloads', on_delete=models.CASCADE, parent_link=True)
+        ShowSubscription, related_name='downloads', on_delete=models.DO_NOTHING, parent_link=True)
+
+    def delete(self, using=None, keep_parents=True):
+        super().delete(using, keep_parents)

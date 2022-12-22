@@ -1,3 +1,5 @@
+from django.dispatch import receiver
+from django.db.models.signals import pre_delete
 import logging
 from typing import List
 
@@ -20,7 +22,8 @@ class ShowSubscription(models.Model):
     # the smaller the more prioritized
     priority = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     # Used when the episode counts includes previous seasons
-    offset = models.PositiveIntegerField(blank=True, default=0, validators=[MinValueValidator(0)])
+    offset = models.PositiveIntegerField(
+        blank=True, default=0, validators=[MinValueValidator(0)])
     exclude = models.CharField(max_length=512, blank=True, default='')
     done = models.BooleanField(default=False)
 
@@ -79,7 +82,13 @@ class ShowSubscription(models.Model):
 
 
 def show_subscription_monitor_step():
-    logger.info('show_subscription_monitor_step')
+    logger.info('Show subscriptions monitor triggered')
     subs = ShowSubscription.objects.filter(done=False)
     for sub in subs:
         sub.monitor_step()
+
+
+@receiver(pre_delete, sender=ShowSubscription, dispatch_uid='show_subscription_delete_signal')
+def show_subscription_pre_delete(sender, instance: ShowSubscription, using, **kwargs):
+    for download in instance.downloads.all():
+        download.delete(keep_parents=True)
