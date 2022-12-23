@@ -160,51 +160,51 @@ REST_FRAMEWORK = {
 
 BUILDING = env('BUILDING')
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'backend': {
+            'class': 'logging.FileHandler',
+            'filename': 'app_data/backend.log',
+            'encoding': 'utf8',
+            'formatter': 'simple',
+        },
+        'hamstery': {
+            'class': 'logging.FileHandler',
+            'filename': 'app_data/hamstery.log',
+            'encoding': 'utf8',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+        'hamstery': {
+            'handlers': ['hamstery', 'console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{name} {levelname} {asctime} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+}
+
 if BUILDING is False:
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {
-            'backend': {
-                'class': 'logging.FileHandler',
-                'filename': 'app_data/backend.log',
-                'encoding': 'utf8',
-                'formatter': 'simple',
-            },
-            'hamstery': {
-                'class': 'logging.FileHandler',
-                'filename': 'app_data/hamstery.log',
-                'encoding': 'utf8',
-                'formatter': 'verbose',
-            },
-            'console': {
-                'class': 'logging.StreamHandler',
-            },
-        },
-        'loggers': {
-            'django': {
-                'handlers': ['console'],
-                'propagate': True,
-                'level': 'INFO',
-            },
-            'hamstery': {
-                'handlers': ['hamstery', 'console'],
-                'propagate': True,
-                'level': 'INFO',
-            },
-        },
-        'formatters': {
-            'verbose': {
-                'format': '{name} {levelname} {asctime} {message}',
-                'style': '{',
-            },
-            'simple': {
-                'format': '{levelname} {asctime} {message}',
-                'style': '{',
-            },
-        },
-    }
-    
     PLEX_CONFIG = {
         'url': env('PLEX_URL'),
         'token': env('PLEX_TOKEN'),
