@@ -54,7 +54,7 @@ class ShowSubscription(models.Model):
                     continue
             # We only download the first matched torrent
             torrent = torrents[0]
-            ep.monitor_download_by_url(self.id, torrent['link'])
+            ep.monitor_download_by_url(self.id, torrent['magneturl'])
         return
 
     def check_done(self):

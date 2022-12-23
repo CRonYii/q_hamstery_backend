@@ -1,7 +1,7 @@
 from django.db import models
 import requests
 import logging
-from xml.etree import ElementTree
+from lxml import etree
 
 from ..utils import Result, failure, success
 
@@ -36,16 +36,18 @@ class Torznab(Indexer):
                              'apikey': self.apikey, 'q': query, 't': 'search', 'cat': self.cat, })
             if not r.ok:
                 return failure('Torznab %s(%s): HTTP Error %d %s' % (self.name, self.url, r.status_code, r.reason))
-            tree = ElementTree.fromstring(r.content)
+            tree = etree.fromstring(r.content)
             if tree.tag == "error":
-                return failure(tree.get('description'))
+                return failure(tree.find('description'))
             channel = tree.find('channel')
             torrents = []
             for item in channel.iter('item'):
                 try:
+                    magneturl = item.xpath('torznab:attr[@name=\'magneturl\']', namespaces=tree.nsmap)[0]
                     torrent = {
                         'title': item.find('title').text,
                         'link': item.find('link').text,
+                        'magneturl': magneturl.get('value'),
                         'size': item.find('size').text,
                         'pub_date': item.find('pubDate').text
                     }
@@ -64,7 +66,7 @@ class Torznab(Indexer):
                              'apikey': self.apikey, 't': 'caps', })
             if not r.ok:
                 return failure('Torznab %s(%s): HTTP Error %d %s' % (self.name, self.url, r.status_code, r.reason))
-            tree = ElementTree.fromstring(r.content)
+            tree = etree.fromstring(r.content)
             if tree.tag == "error":
                 return failure(tree.get('description'))
             caps = {
@@ -76,7 +78,7 @@ class Torznab(Indexer):
                 caps['searching'][item.tag] = item.attrib
             categories = tree.find('categories')
             for item in categories.getchildren():
-                cat = item.attrib
+                cat = dict(item.attrib)
                 cat['subcat'] = []
                 for subcat in item.getchildren():
                     cat['subcat'].append(subcat.attrib)
