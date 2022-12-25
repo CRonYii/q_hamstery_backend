@@ -203,3 +203,7 @@ def get_episode_number_from_title(title: str) -> int:
         pass
 
     return cn2an.cn2an(ep, mode='smart')
+
+
+def get_valid_filename(s: str) -> str:
+    return re.sub(r"(?u)[^-\w.]", "", s)

@@ -11,6 +11,7 @@ from typing import List, Sequence
 from asgiref.sync import async_to_sync, sync_to_async
 from django.db import models
 from django.db.models import Q
+from hamstery.utils import get_valid_filename
 
 from hamstery.models import Indexer
 from hamstery.plex import plex_manager
@@ -115,8 +116,9 @@ class TvShowManager(models.Manager):
         except TvShow.DoesNotExist:
             # or create
             if dirpath == '':
+                show_name = '%s (%d)' % (get_valid_filename(name), air_datetime.year)
                 dirpath = os.path.join(
-                    storage.path, '%s (%d)' % (name, air_datetime.year))
+                    storage.path, show_name)
                 if not os.path.exists(dirpath):
                     os.mkdir(dirpath)
             show = TvShow(
@@ -480,7 +482,7 @@ class TvEpisode(models.Model):
         season: TvSeason = self.season
         show: TvShow = season.show
         filename = "%s - S%02dE%02d - %s" % (
-            show.name, season.season_number, self.episode_number, self.name)
+            get_valid_filename(show.name), season.season_number, self.episode_number, get_valid_filename(self.name))
         return filename
 
     def get_folder(self):
