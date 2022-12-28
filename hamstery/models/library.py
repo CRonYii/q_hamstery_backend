@@ -338,6 +338,8 @@ class TvSeason(models.Model):
         results = {}
         for ep in eps:
             adjusted_ep_n = ep.episode_number + offset
+            if adjusted_ep_n <= 0:
+                continue
 
             def filter_torrent(torrent):
                 title = torrent['title']

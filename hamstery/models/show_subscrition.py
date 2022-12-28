@@ -22,8 +22,8 @@ class ShowSubscription(models.Model):
     # the smaller the more prioritized
     priority = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     # Used when the episode counts includes previous seasons
-    offset = models.PositiveIntegerField(
-        blank=True, default=0, validators=[MinValueValidator(0)])
+    offset = models.IntegerField(
+        blank=True, default=0)
     exclude = models.CharField(max_length=512, blank=True, default='')
     done = models.BooleanField(default=False)
 
