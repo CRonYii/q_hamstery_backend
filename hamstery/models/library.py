@@ -252,8 +252,11 @@ class TvSeasonManager(models.Manager):
         except TvSeason.DoesNotExist:
             # or create
             if dirpath == '':
+                season_name = 'Season %d' % season_number
+                if season_number == 0:
+                    season_name = 'Specials'
                 dirpath = os.path.join(
-                    show.path, 'Season %d' % season_number)
+                    show.path, season_name)
                 os.mkdir(dirpath)
             season = TvSeason(
                 show=show,
