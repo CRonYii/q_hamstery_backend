@@ -5,6 +5,7 @@ import re
 import shutil
 import traceback
 from datetime import datetime
+import errno
 from pathlib import Path
 from typing import List, Sequence
 
@@ -116,7 +117,8 @@ class TvShowManager(models.Manager):
         except TvShow.DoesNotExist:
             # or create
             if dirpath == '':
-                show_name = '%s (%d)' % (get_valid_filename(name), air_datetime.year)
+                show_name = '%s (%d)' % (
+                    get_valid_filename(name), air_datetime.year)
                 dirpath = os.path.join(
                     storage.path, show_name)
                 if not os.path.exists(dirpath):
@@ -451,12 +453,26 @@ class TvEpisode(models.Model):
         if season_folder not in path.parents:
             # Need to first move the file to season folder and rename
             src = pathstr
-            pathstr = os.path.join(
-                self.get_folder(), self.get_formatted_file_destination(src))
-            try:
-                shutil.move(src, pathstr)
-            except OSError as e:
-                logger.error('Error when importing episode: %s' % str(e))
+            names = [
+                self.get_formatted_file_destination(src, 'full'),
+                self.get_formatted_file_destination(src, 'meta_simple_original'),
+                self.get_formatted_file_destination(src, 'meta_full'),
+                self.get_formatted_file_destination(src, 'meta_simple'),
+            ]
+            done = False
+            for name in names:
+                pathstr = os.path.join(self.get_folder(), name)
+                try:
+                    shutil.move(src, pathstr)
+                    done = True
+                    break
+                except OSError as e:
+                    if e.errno == errno.ENAMETOOLONG:
+                        continue
+                    logger.error('Error when importing episode: %s' % str(e))
+                    return False
+            if done is False:
+                logger.error('Error when importing episode: All generated filename are too long')
                 return False
         self.path = pathstr
         self.status = TvEpisode.Status.READY
@@ -478,17 +494,24 @@ class TvEpisode(models.Model):
             logger.info('Deleted download "%s"' % download.filename)
             download.cancel()
 
-    def get_formatted_file_destination(self, name):
+    def get_formatted_file_destination(self, name, option='full'):
         _, video_filename = os.path.split(name)
         original_name, ext = os.path.splitext(video_filename)
+        if option == 'meta_simple_original':
+            return "%s (%s)%s" % (self.get_formatted_filename('simple'), original_name, ext)
+        if option == 'meta_full':
+            return "%s%s" % (self.get_formatted_filename(), ext)
+        if option == 'meta_simple':
+            return "%s%s" % (self.get_formatted_filename('simple'), ext)
         return "%s (%s)%s" % (self.get_formatted_filename(), original_name, ext)
 
-    def get_formatted_filename(self):
+    def get_formatted_filename(self, option='full'):
         season: TvSeason = self.season
         show: TvShow = season.show
-        filename = "%s - S%02dE%02d - %s" % (
+        if option == 'simple':
+            return "%s - S%02dE%02d" % (get_valid_filename(show.name), season.season_number, self.episode_number)
+        return "%s - S%02dE%02d - %s" % (
             get_valid_filename(show.name), season.season_number, self.episode_number, get_valid_filename(self.name))
-        return filename
 
     def get_folder(self):
         season: TvSeason = self.season
