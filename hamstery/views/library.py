@@ -94,10 +94,14 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
         url = form.cleaned_data['url']
-        if episode.download_by_url(url):
-            return Response('Ok')
-        else:
-            return Response('Invalid download', status=status.HTTP_400_BAD_REQUEST)
+        if url is not None and url != '':
+            if episode.download_by_url(url):
+                return Response('Ok')
+        elif 'torrent' in request.FILES:
+            torrent = request.FILES['torrent']
+            if episode.download_by_torrents(torrent):
+                return Response('Ok')
+        return Response('Invalid download', status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post'], detail=True)
     def local_import(self, request, pk=None):

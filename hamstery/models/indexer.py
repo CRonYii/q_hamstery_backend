@@ -43,14 +43,15 @@ class Torznab(Indexer):
             torrents = []
             for item in channel.iter('item'):
                 try:
-                    magneturl = item.xpath('torznab:attr[@name=\'magneturl\']', namespaces=tree.nsmap)[0]
                     torrent = {
                         'title': item.find('title').text,
                         'link': item.find('link').text,
-                        'magneturl': magneturl.get('value'),
                         'size': item.find('size').text,
                         'pub_date': item.find('pubDate').text
                     }
+                    magneturl = item.xpath('torznab:attr[@name=\'magneturl\']', namespaces=tree.nsmap)
+                    if len(magneturl) != 0:
+                        torrent['magneturl'] = magneturl[0].get('value')
                     torrents.append(torrent)
                 except:
                     continue

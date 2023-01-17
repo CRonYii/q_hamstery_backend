@@ -6,8 +6,8 @@ class TMDBForm(forms.Form):
 
 
 class DownloadForm(forms.Form):
-    url = forms.CharField()
-
+    url = forms.CharField(required=False)
+    torrent = forms.FileField(required=False)
 
 class ImportForm(forms.Form):
     path = forms.CharField()
