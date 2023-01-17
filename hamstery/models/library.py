@@ -570,5 +570,19 @@ class TvEpisode(models.Model):
         else:
             return False
 
+    def monitor_download_by_torrents(self, sub_id, torrents):
+        from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG, MONITORED_TV_TAG,
+                                   qbt_client)
+        res = qbt_client.torrents_add(
+            torrent_files=torrents,
+            rename='%s,%s' % (self.id, sub_id),
+            category=HAMSTERY_CATEGORY,
+            tags=[UNSCHEDULED_TV_TAG, MONITORED_TV_TAG],
+            is_paused=False)
+        if res == 'Ok.':
+            return True
+        else:
+            return False
+
     def __str__(self):
         return "%s - S%02dE%02d - %s" % (self.id, self.season_number, self.episode_number, self.name)

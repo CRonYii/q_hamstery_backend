@@ -1,10 +1,12 @@
-from django.dispatch import receiver
-from django.db.models.signals import pre_delete
 import logging
+import traceback
 from typing import List
 
+import requests
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 from hamstery.models import Indexer, TvEpisode, TvSeason
 
@@ -54,7 +56,16 @@ class ShowSubscription(models.Model):
                     continue
             # We only download the first matched torrent
             torrent = torrents[0]
-            ep.monitor_download_by_url(self.id, torrent['magneturl'])
+            try:
+                if 'magneturl' in torrent:
+                    ep.monitor_download_by_url(self.id, torrent['magneturl'])
+                elif torrent['link'].startswith('magnet:'):
+                    ep.monitor_download_by_url(self.id, torrent['link'])
+                else:
+                    r = requests.get(torrent['link'])
+                    ep.monitor_download_by_torrents(self.id, r.content)
+            except Exception:
+                logger.error('Failed to download monitored-tv (%s): %s' % (torrent['title'], traceback.format_exc()))
         return
 
     def check_done(self):
