@@ -100,8 +100,13 @@ class TvShowManager(models.Manager):
             return res
         details = res.data()
         name = details['name']
-        air_date = details['first_air_date']
-        air_datetime = datetime.strptime(air_date, '%Y-%m-%d')
+        air_date = value_or(details, 'first_air_date', '')
+        air_date_year = None
+        if air_date != '':
+            air_datetime = datetime.strptime(air_date, '%Y-%m-%d')
+            air_date_year = air_datetime.year
+        else:
+            air_date = None
         number_of_episodes = details['number_of_episodes']
         number_of_seasons = details['number_of_seasons']
         poster_path = value_or(details, 'poster_path', '')
@@ -117,8 +122,9 @@ class TvShowManager(models.Manager):
         except TvShow.DoesNotExist:
             # or create
             if dirpath == '':
-                show_name = '%s (%d)' % (
-                    get_valid_filename(name), air_datetime.year)
+                show_name = get_valid_filename(name)
+                if air_date_year is not None:
+                    show_name = show_name + ' (%d)' % (air_date_year)
                 dirpath = os.path.join(
                     storage.path, show_name)
                 if not os.path.exists(dirpath):
@@ -239,7 +245,9 @@ class TvSeasonManager(models.Manager):
         episodes = details['episodes']
         number_of_episodes = len(episodes)
         poster_path = value_or(details, 'poster_path', show.poster_path)
-        air_date = details['air_date']
+        air_date = value_or(details, 'air_date', '')
+        if air_date == '':
+            air_date = None
         logger.info('scan season %s - Season %02d' %
                     (show.name, season_number))
         try:
@@ -372,7 +380,9 @@ class TvEpisodeManager(models.Manager):
         name = details['name']
         season_number = details['season_number']
         poster_path = value_or(details, 'still_path', season.poster_path)
-        air_date = details['air_date']
+        air_date = value_or(details, 'air_date', '')
+        if air_date == '':
+            air_date = None
         status = TvEpisode.Status.MISSING if dirpath == '' else TvEpisode.Status.READY
 
         try:
