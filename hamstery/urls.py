@@ -21,5 +21,4 @@ urlpatterns = [
     path('auth/logout', views.logout_view),
     path('auth/test', views.test_auth_view),
     path('api/media/list', views.media_list_root_view),
-    path('api/media/list/<str:path>', views.media_list_view),
 ]
