@@ -110,7 +110,8 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
         path = form.cleaned_data['path']
-        if episode.import_video(path, True) is True:
+        mode = form.cleaned_data['mode'] or 'move'
+        if episode.import_video(path, manually=True, mode=mode) is True:
             episode.save()
             return Response('Ok')
         else:

@@ -213,7 +213,8 @@ def handle_completed_tv_task(task):
     download.done = True
     download.save()
 
-    episode.import_video(full_path, manually)
+    # mode will not used unless there is a bug (file is not moved to season folder before import)
+    episode.import_video(full_path, manually, mode='link')
     episode.save()
 
     qbt_client.torrents_remove_tags(DOWNLOADED_TV_TAG, hash)

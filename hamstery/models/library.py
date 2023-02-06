@@ -451,7 +451,7 @@ class TvEpisode(models.Model):
             plex_manager.refresh_plex_library_by_filepath(self.get_folder())
         return True
 
-    def import_video(self, pathstr: str, manually: bool) -> bool:
+    def import_video(self, pathstr: str, manually: bool, mode='move') -> bool:
         path = Path(pathstr)
         season_folder = Path(self.get_folder())
         if not path.exists() or not path.is_file() or not is_video_extension(pathstr):
@@ -470,7 +470,12 @@ class TvEpisode(models.Model):
             for name in names:
                 pathstr = os.path.join(self.get_folder(), name)
                 try:
-                    shutil.move(src, pathstr)
+                    if mode == 'symlink':
+                        os.symlink(src, pathstr)
+                    elif mode == 'link':
+                        os.link(src, pathstr)
+                    else:
+                        shutil.move(src, pathstr)
                     done = True
                     break
                 except OSError as e:

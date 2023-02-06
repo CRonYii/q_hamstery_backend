@@ -11,6 +11,7 @@ class DownloadForm(forms.Form):
 
 class ImportForm(forms.Form):
     path = forms.CharField()
+    mode = forms.CharField(required=False)
 
 
 class SeasonSearchForm(forms.Form):
