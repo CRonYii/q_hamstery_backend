@@ -19,7 +19,7 @@ from hamstery.plex import plex_manager
 from hamstery.tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
                            tmdb_tv_show_details)
 from hamstery.utils import (failure, get_episode_number_from_title,
-                            is_video_extension, list_dir, list_file, success,
+                            is_video_extension, list_dir, tree_media, success,
                             validate_directory_exist, value_or)
 
 logger = logging.getLogger(__name__)
@@ -295,16 +295,13 @@ class TvSeason(models.Model):
 
     objects: TvSeasonManager = TvSeasonManager()
 
-    EPISODE_NAME_RE = re.compile(
-        r's\d{1,2}e(\d{1,4}).*?(mp4|mkv|flv|avi|rmvb|m4p|m4v)$', re.IGNORECASE)
-
     def get_episode_to_dir_map(self):
         episode_map = dict()
-        for (path, filename) in list_file(self.path):
+        for (path, filename) in tree_media(self.path)['files']:
             fullpath = os.path.join(path, filename)
-            match = TvSeason.EPISODE_NAME_RE.search(filename)
-            if match:
-                episode_number = int(match.group(1))
+            print(fullpath)
+            episode_number = get_episode_number_from_title(filename)
+            if episode_number:
                 episode_map[episode_number] = fullpath
         return episode_map
 

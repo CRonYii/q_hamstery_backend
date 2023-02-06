@@ -31,6 +31,19 @@ def list_file(path) -> Sequence[Sequence[str]]:
     for (dirpath, _, filenames) in os.walk(path):
         return [[dirpath, filename] for filename in filenames]
 
+def tree_media(path):
+    all_dirs = []
+    all_files = []
+    for (dirpath, dirnames, filenames) in os.walk(os.path.abspath(path)):
+        dirs = [[dirpath, dir] for dir in dirnames]
+        files = [[dirpath, filename] for filename in filenames]
+        all_dirs = all_dirs + dirs
+        all_files = all_files + files
+    return {
+        'dirs': all_dirs,
+        'files': all_files,
+    }
+
 
 def make_file_uri_obj(path, name):
     return {
@@ -181,7 +194,7 @@ def is_video_extension(name):
 
 
 EPISODE_NUMBER_RE = re.compile(
-    r'(?:[Ee][Pp]|[ E第【[])(\d{2,4}|[零一二三四五六七八九十百千]{1,6})(v\d)?[ 話话回集\].】]')
+    r'(?:[Ee][Pp]|[ E第【[.])(\d{2,4}|[零一二三四五六七八九十百千]{1,6})(v\d)?[ 話话回集\].】]')
 
 
 def get_episode_number_from_title(title: str) -> int:
