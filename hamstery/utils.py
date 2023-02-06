@@ -193,6 +193,13 @@ def is_video_extension(name):
     return VIDEO_FILE_RE.match(name)
 
 
+SUPPLEMENTAL_FILE_RE = re.compile(r'.*?\.(ass|srt)$')
+
+
+def is_supplemental_file_extension(name):
+    return SUPPLEMENTAL_FILE_RE.match(name)
+
+
 EPISODE_NUMBER_RE = re.compile(
     r'(?:[Ee][Pp]|[ E第【[.])(\d{2,4}|[零一二三四五六七八九十百千]{1,6})(v\d)?[ 話话回集\].】]')
 

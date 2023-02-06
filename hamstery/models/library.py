@@ -1,26 +1,26 @@
 import asyncio
+import errno
 import logging
 import os
 import re
 import shutil
 import traceback
 from datetime import datetime
-import errno
 from pathlib import Path
 from typing import List, Sequence
 
 from asgiref.sync import async_to_sync, sync_to_async
 from django.db import models
 from django.db.models import Q
-from hamstery.utils import get_valid_filename
 
 from hamstery.models import Indexer
 from hamstery.plex import plex_manager
 from hamstery.tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
                            tmdb_tv_show_details)
 from hamstery.utils import (failure, get_episode_number_from_title,
-                            is_video_extension, list_dir, tree_media, success,
-                            validate_directory_exist, value_or)
+                            get_valid_filename, is_supplemental_file_extension,
+                            is_video_extension, list_dir, list_file, success,
+                            tree_media, validate_directory_exist, value_or)
 
 logger = logging.getLogger(__name__)
 
@@ -458,6 +458,13 @@ class TvEpisode(models.Model):
             logger.warn('Attempt to import invalid file: %s' % pathstr)
             return False
         if season_folder not in path.parents:
+            def import_single_file(src, dst):
+                if mode == 'symlink':
+                    os.symlink(src, dst)
+                elif mode == 'link':
+                    os.link(src, dst)
+                else:
+                    shutil.move(src, dst)
             # Need to first move the file to season folder and rename
             src = pathstr
             names = [
@@ -470,12 +477,7 @@ class TvEpisode(models.Model):
             for name in names:
                 pathstr = os.path.join(self.get_folder(), name)
                 try:
-                    if mode == 'symlink':
-                        os.symlink(src, pathstr)
-                    elif mode == 'link':
-                        os.link(src, pathstr)
-                    else:
-                        shutil.move(src, pathstr)
+                    import_single_file(src, pathstr)
                     done = True
                     break
                 except OSError as e:
@@ -486,6 +488,13 @@ class TvEpisode(models.Model):
             if done is False:
                 logger.error('Error when importing episode: All generated filename are too long')
                 return False
+            # Move/rename subtitle files as well
+            final_basename, _ = os.path.splitext(os.path.basename(pathstr))
+            files = list_file(os.path.dirname(src))
+            for [p, f] in filter(lambda f: is_supplemental_file_extension(f[1]), files):
+                sup_file = os.path.join(p, f)
+                _, sup_ext = f.split('.', maxsplit=1)
+                import_single_file(sup_file, os.path.join(self.get_folder(), "%s.%s" % (final_basename, sup_ext)))
         self.path = pathstr
         self.status = TvEpisode.Status.READY
         if manually is True:
@@ -569,8 +578,8 @@ class TvEpisode(models.Model):
             return False
 
     def monitor_download_by_url(self, sub_id, urls):
-        from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG, MONITORED_TV_TAG,
-                                   qbt_client)
+        from ..qbittorrent import (HAMSTERY_CATEGORY, MONITORED_TV_TAG,
+                                   UNSCHEDULED_TV_TAG, qbt_client)
         res = qbt_client.torrents_add(
             urls=urls,
             rename='%s,%s' % (self.id, sub_id),
@@ -583,8 +592,8 @@ class TvEpisode(models.Model):
             return False
 
     def monitor_download_by_torrents(self, sub_id, torrents):
-        from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG, MONITORED_TV_TAG,
-                                   qbt_client)
+        from ..qbittorrent import (HAMSTERY_CATEGORY, MONITORED_TV_TAG,
+                                   UNSCHEDULED_TV_TAG, qbt_client)
         res = qbt_client.torrents_add(
             torrent_files=torrents,
             rename='%s,%s' % (self.id, sub_id),

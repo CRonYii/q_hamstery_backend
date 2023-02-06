@@ -2,15 +2,15 @@ import logging
 import os
 import traceback
 from typing import Any, Callable
-from pathlib import Path
 
 import qbittorrentapi
 from django.conf import settings
 
-from hamstery.models.download import TvDownload, MonitoredTvDownload
+from hamstery.models.download import MonitoredTvDownload, TvDownload
 from hamstery.models.library import TvEpisode
 from hamstery.models.show_subscrition import ShowSubscription
-from hamstery.utils import Result, failure, is_video_extension, success
+from hamstery.utils import (Result, failure, is_supplemental_file_extension,
+                            is_video_extension, success)
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +105,10 @@ def handle_unscheduled_tv_tasks():
     handle_tasks(UNSCHEDULED_TV_TAG, handle_unscheduled_tv_task)
 
 
+def is_valid_tv_download_file(file):
+    name = file['name']
+    return is_video_extension(name) or is_supplemental_file_extension(name)
+
 def handle_fetching_tv_task(task):
     try:
         hash = task['hash']
@@ -129,7 +133,7 @@ def handle_fetching_tv_task(task):
     if len(files) != 1:
         # We only download the video file at this time
         do_not_download_files = map(lambda f: f['index'], filter(
-            lambda f: f['index'] is not target_file['index'], files))
+            lambda f: not is_valid_tv_download_file(f), files))
         qbt_client.torrents_file_priority(
             hash, do_not_download_files, priority=0)
     qbt_client.torrents_rename(hash, "%s (%s)" % (task['name'], filename))
@@ -143,7 +147,8 @@ def handle_fetching_tv_tasks():
 
 
 def handle_downloading_tv_task(task):
-    if MONITORED_TV_TAG in task['tags']:
+    monitored_task = MONITORED_TV_TAG in task['tags']
+    if monitored_task:
         try:
             hash = task['hash']
             download: MonitoredTvDownload = MonitoredTvDownload.objects.get(pk=hash)
@@ -157,7 +162,7 @@ def handle_downloading_tv_task(task):
             return failure('Cannot find download in DB')
     episode: TvEpisode = download.episode
 
-    if MONITORED_TV_TAG in task['tags']:
+    if monitored_task:
         # Cancel all other subscribed downloads with a lower or equal priority
         sub = download.subscription
         downloads = MonitoredTvDownload.objects.filter(episode=episode)
@@ -176,16 +181,17 @@ def handle_downloading_tv_task(task):
             download.cancel()
             return success('Monited Download cancel due to episode downloaded/imported by user mannually')
 
-    folder = episode.get_folder()
-    filename = episode.get_formatted_file_destination(download.filename)
+    download.done = True
+    download.save()
 
-    qbt_client.torrents_set_location(folder, hash)
-    qbt_client.torrents_rename_file(
-        hash, old_path=download.filename, new_path=filename)
+    src_path = os.path.join(task['save_path'], download.filename)
+    episode.import_video(src_path, manually=not monitored_task, mode='link')
+    episode.save()
+
     qbt_client.torrents_remove_tags(DOWNLOADING_TV_TAG, hash)
-    qbt_client.torrents_add_tags(DOWNLOADED_TV_TAG, hash)
+    qbt_client.torrents_add_tags(ORGANIZED_TV_TAG, hash)
 
-    return success('TV download completed')
+    return success('TV organized')
 
 
 def handle_downloading_tv_tasks():
@@ -193,42 +199,7 @@ def handle_downloading_tv_tasks():
                  handle_downloading_tv_task, status='completed')
 
 
-def handle_completed_tv_task(task):
-    manually = MONITORED_TV_TAG not in task['tags']
-    try:
-        hash = task['hash']
-        download: TvDownload = TvDownload.objects.get(pk=hash)
-    except (TvDownload.DoesNotExist, ValueError):
-        return failure('Cannot find download in DB')
-    episode: TvEpisode = download.episode
-
-    folder = episode.get_folder()
-    filename = episode.get_formatted_file_destination(download.filename)
-    full_path = os.path.join(folder, filename)
-
-    if not Path(full_path).exists():
-        # Skip this time, qbittorent has not finished moving the file to final destination
-        return success(None)
-    
-    download.done = True
-    download.save()
-
-    # mode will not used unless there is a bug (file is not moved to season folder before import)
-    episode.import_video(full_path, manually, mode='link')
-    episode.save()
-
-    qbt_client.torrents_remove_tags(DOWNLOADED_TV_TAG, hash)
-    qbt_client.torrents_add_tags(ORGANIZED_TV_TAG, hash)
-
-    return success('TV organized')
-
-
-def handle_completed_tv_tasks():
-    handle_tasks(DOWNLOADED_TV_TAG, handle_completed_tv_task)
-
-
 def qbittorrent_handle_tv_downloads():
-    handle_completed_tv_tasks()
     handle_downloading_tv_tasks()
     handle_fetching_tv_tasks()
     handle_unscheduled_tv_tasks()
