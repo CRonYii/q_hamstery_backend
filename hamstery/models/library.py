@@ -461,10 +461,10 @@ class TvEpisode(models.Model):
             def import_single_file(src, dst):
                 if mode == 'symlink':
                     os.symlink(src, dst)
-                elif mode == 'link':
-                    os.link(src, dst)
-                else:
+                elif mode == 'move':
                     shutil.move(src, dst)
+                else:
+                    os.link(src, dst)
             # Need to first move the file to season folder and rename
             src = pathstr
             names = [
@@ -491,7 +491,11 @@ class TvEpisode(models.Model):
             # Move/rename subtitle files as well
             final_basename, _ = os.path.splitext(os.path.basename(pathstr))
             files = list_file(os.path.dirname(src))
-            for [p, f] in filter(lambda f: is_supplemental_file_extension(f[1]), files):
+            original_name, _ = os.path.splitext(os.path.basename(src))
+            def is_the_same_name(name):
+                name, _ = os.path.basename(name).split('.', maxsplit=1)
+                return original_name == name
+            for [p, f] in filter(lambda f: is_supplemental_file_extension(f[1]) and is_the_same_name(f[1]), files):
                 sup_file = os.path.join(p, f)
                 _, sup_ext = f.split('.', maxsplit=1)
                 import_single_file(sup_file, os.path.join(self.get_folder(), "%s.%s" % (final_basename, sup_ext)))
