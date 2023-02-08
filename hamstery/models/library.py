@@ -18,8 +18,8 @@ from hamstery.plex import plex_manager
 from hamstery.tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
                            tmdb_tv_show_details)
 from hamstery.utils import (failure, get_episode_number_from_title,
-                            get_valid_filename, is_supplemental_file_extension,
-                            is_video_extension, list_dir, list_file, success,
+                            get_valid_filename, list_supplemental_file,
+                            is_video_extension, list_dir, success,
                             tree_media, validate_directory_exist, value_or)
 
 logger = logging.getLogger(__name__)
@@ -298,6 +298,8 @@ class TvSeason(models.Model):
     def get_episode_to_dir_map(self):
         episode_map = dict()
         for (path, filename) in tree_media(self.path)['files']:
+            if not is_video_extension(filename):
+                continue
             fullpath = os.path.join(path, filename)
             print(fullpath)
             episode_number = get_episode_number_from_title(filename)
@@ -438,15 +440,23 @@ class TvEpisode(models.Model):
     def remove_episode(self):
         if self.status == TvEpisode.Status.MISSING:
             return True
-        downalods = self.downloads.filter(done=True)
-        if len(downalods) == 0:
-            path = Path(self.path)
-            if path.exists():
-                try:
-                    os.remove(self.path)
-                except OSError:
-                    return False
+        # Directly delete file on drive
+        path = Path(self.path)
+        if path.exists():
+            try:
+                os.remove(self.path)
+            except OSError:
+                # May be used by another process now, stop deletion
+                return False
+        for [p, f] in list_supplemental_file(self.path):
+            sup_file = os.path.join(p, f)
+            try:
+                os.remove(sup_file)
+            except:
+                pass
+        # delete all done downloads as well
         self.set_path('')
+        # Update Plex
         if plex_manager:
             plex_manager.refresh_plex_library_by_filepath(self.get_folder())
         return True
@@ -483,22 +493,20 @@ class TvEpisode(models.Model):
                 except OSError as e:
                     if e.errno == errno.ENAMETOOLONG:
                         continue
-                    logger.error('Error when importing episode: %s' % str(e))
+                    logger.error('Error when importing episode "%s" : %s' % (src, str(e)))
                     return False
             if done is False:
-                logger.error('Error when importing episode: All generated filename are too long')
+                logger.error('Error when importing episode "%s": All generated filename are too long' % src)
                 return False
             # Move/rename subtitle files as well
             final_basename, _ = os.path.splitext(os.path.basename(pathstr))
-            files = list_file(os.path.dirname(src))
-            original_name, _ = os.path.splitext(os.path.basename(src))
-            def is_the_same_name(name):
-                name, _ = os.path.basename(name).split('.', maxsplit=1)
-                return original_name == name
-            for [p, f] in filter(lambda f: is_supplemental_file_extension(f[1]) and is_the_same_name(f[1]), files):
+            for [p, f] in list_supplemental_file(src):
                 sup_file = os.path.join(p, f)
                 _, sup_ext = f.split('.', maxsplit=1)
-                import_single_file(sup_file, os.path.join(self.get_folder(), "%s.%s" % (final_basename, sup_ext)))
+                try:
+                    import_single_file(sup_file, os.path.join(self.get_folder(), "%s.%s" % (final_basename, sup_ext)))
+                except OSError as e:
+                    logger.warn('Error when importing supplemental file "%s": %s' % (sup_file, str(e)))
         self.path = pathstr
         self.status = TvEpisode.Status.READY
         if manually is True:

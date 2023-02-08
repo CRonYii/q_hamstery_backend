@@ -199,6 +199,16 @@ SUPPLEMENTAL_FILE_RE = re.compile(r'.*?\.(ass|srt)$')
 def is_supplemental_file_extension(name):
     return SUPPLEMENTAL_FILE_RE.match(name)
 
+def is_supplemental_file(src, name):
+    basename, _ = os.path.basename(name).split('.', maxsplit=1)
+    return src == basename and is_supplemental_file_extension(name)
+
+def list_supplemental_file(src):
+    files = list_file(os.path.dirname(src))
+    original_name, _ = os.path.splitext(os.path.basename(src))
+    for res in filter(lambda f: is_supplemental_file(original_name, f[1]), files):
+        yield res
+
 
 EPISODE_NUMBER_RE = re.compile(
     r'(?:[Ee][Pp]|[ E第【[])(\d{2,4}|[零一二三四五六七八九十百千]{1,6})(v\d)?[ 話话回集\].】]')
