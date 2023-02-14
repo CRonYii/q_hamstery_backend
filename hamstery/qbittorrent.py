@@ -132,10 +132,11 @@ def handle_fetching_tv_task(task):
     download.save()
     if len(files) != 1:
         # We only download the video file at this time
-        do_not_download_files = map(lambda f: f['index'], filter(
-            lambda f: not is_valid_tv_download_file(f), files))
-        qbt_client.torrents_file_priority(
-            hash, do_not_download_files, priority=0)
+        do_not_download_files = list(map(lambda f: f['index'], filter(
+            lambda f: not is_valid_tv_download_file(f), files)))
+        if len(do_not_download_files) != 0:
+            qbt_client.torrents_file_priority(
+                hash, do_not_download_files, priority=0)
     qbt_client.torrents_rename(hash, "%s (%s)" % (task['name'], filename))
     qbt_client.torrents_remove_tags(FETCHING_TV_TAG, hash)
     qbt_client.torrents_add_tags(DOWNLOADING_TV_TAG, hash)
