@@ -15,6 +15,7 @@ def schedule_qbittorrent_job():
     try:
         qbt_client.auth_log_in()
         # display qBittorrent info
+        # require Web API >= 2.8.3 to run properly
         logger.info(f'qBittorrent: {qbt_client.app.version}')
         logger.info(
             f'qBittorrent Web API: {qbt_client.app.web_api_version}')
