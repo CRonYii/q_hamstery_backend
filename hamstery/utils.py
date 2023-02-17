@@ -193,7 +193,7 @@ def is_video_extension(name):
     return VIDEO_FILE_RE.match(name)
 
 
-SUPPLEMENTAL_FILE_RE = re.compile(r'.*?\.(ass|srt|idx|sub)$')
+SUPPLEMENTAL_FILE_RE = re.compile(r'.*?\.(ass|ssa|srt|idx|sub)$')
 
 
 def is_supplemental_file_extension(name):
