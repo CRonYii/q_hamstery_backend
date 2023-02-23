@@ -47,10 +47,10 @@ class PlexClient:
         try:
             req = self.request('/library/sections')
             if not req.ok:
-                return [False, f'''Plex Server error {self.url}/{self.token}: {req.reason}''']
-            return [True, f'''Successfully connected to Plex Server {self.url}/{self.token}''']
+                return [False, f'''Plex Server error {self.url} token={self.token}: {req.reason}''']
+            return [True, f'''Successfully connected to Plex Server {self.url} token={self.token}''']
         except requests.exceptions.RequestException as e:
-            return [False, f'''Failed to connect to Plex Server {self.url}/{self.token} with error: 
+            return [False, f'''Failed to connect to Plex Server {self.url} token={self.token} with error: 
 {e}''']
 
     def get_libraries(self):
