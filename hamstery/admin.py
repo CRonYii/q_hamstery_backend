@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Indexer, Torznab, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload, MonitoredTvDownload, ShowSubscription
+from .models import *
 
 # Register your models here.
 
@@ -54,3 +54,7 @@ class MonitoredTvDownloadAdmin(admin.ModelAdmin):
 @admin.register(ShowSubscription)
 class ShowSubscriptionAdmin(admin.ModelAdmin):
     list_display = ['id', 'season', 'query']
+
+@admin.register(HamsterySettings)
+class HamsterySettingsAdmin(admin.ModelAdmin):
+    list_display = ['id']

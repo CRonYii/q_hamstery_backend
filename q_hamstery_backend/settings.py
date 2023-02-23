@@ -22,8 +22,6 @@ env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(
         str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
-    QBITTORRENT_USERNAME=(str, ''),
-    QBITTORRENT_PASSWORD=(str, ''),
     PLEX_URL=(str, ''),
     PLEX_TOKEN=(str, ''),
     CSRF_TRUSTED_ORIGINS=(str, None),
@@ -208,11 +206,4 @@ if BUILDING is False:
     PLEX_CONFIG = {
         'url': env('PLEX_URL'),
         'token': env('PLEX_TOKEN'),
-    }
-    
-    QBITTORRENT_CONFIG = {
-        'host': env('QBITTORRENT_HOST'),
-        'port': env('QBITTORRENT_PORT'),
-        'username': env('QBITTORRENT_USERNAME'),
-        'password': env('QBITTORRENT_PASSWORD'),
     }

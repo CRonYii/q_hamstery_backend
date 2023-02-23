@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 
 from ..models import TvDownload, MonitoredTvDownload
-from ..qbittorrent import qbt_client
+from ..qbittorrent import qbt
 from ..serializers import TvDownloadSerializer, MonitoredTvDownloadSerializer
 
 # Create your views here.
@@ -36,7 +36,7 @@ class TvDownloadView(viewsets.GenericViewSet):
 
     def append_extra_info(self, download):
         hash = '|'.join(map(lambda d: d['hash'], download))
-        info = qbt_client.torrents_info(torrent_hashes=hash)
+        info = qbt.client.torrents_info(torrent_hashes=hash)
         for d in download:
             i = next((x for x in info if x['hash'] == d['hash']), None)
             if i is None:

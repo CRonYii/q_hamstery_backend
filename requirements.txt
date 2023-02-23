@@ -12,3 +12,4 @@ tzlocal==4.2
 whitenoise==6.2.0
 apscheduler==3.9.1
 psutil==5.9.2
+packaging==23.0

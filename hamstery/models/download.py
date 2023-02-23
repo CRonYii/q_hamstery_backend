@@ -22,8 +22,8 @@ class TvDownload(Download):
     filename = models.CharField(max_length=4096, blank=True, default='')
 
     def cancel(self):
-        from ..qbittorrent import qbt_client
-        qbt_client.torrents_delete(True, self.hash)
+        from ..qbittorrent import qbt
+        qbt.client.torrents_delete(True, self.hash)
         self.delete()
 
 class MonitoredTvDownload(TvDownload):

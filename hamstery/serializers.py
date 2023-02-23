@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Indexer, Torznab, TvLibrary, TvStorage, TvShow, TvSeason, TvEpisode, TvDownload, MonitoredTvDownload, ShowSubscription
+
+from .models import (HamsterySettings, Indexer, MonitoredTvDownload,
+                     ShowSubscription, Torznab, TvDownload, TvEpisode,
+                     TvLibrary, TvSeason, TvShow, TvStorage)
 
 
 class IndexerSerializer(serializers.ModelSerializer):
@@ -73,3 +76,8 @@ class ShowSubscriptionSerializer(serializers.ModelSerializer):
         model = ShowSubscription
         fields = ('id', 'season', 'indexer', 'query',
                   'priority', 'offset', 'exclude', 'done')
+
+class HamsterySettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HamsterySettings
+        fields = '__all__'
