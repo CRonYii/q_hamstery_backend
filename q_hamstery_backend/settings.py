@@ -22,8 +22,6 @@ env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(
         str, 'django-insecure-+h-p!u=n2o-z2ap_ekvwt)$@3*t!hf*uvfx=(!a^de-&ums15b'),
-    PLEX_URL=(str, ''),
-    PLEX_TOKEN=(str, ''),
     CSRF_TRUSTED_ORIGINS=(str, None),
 )
 environ.Env.read_env('.env')
@@ -201,9 +199,3 @@ LOGGING = {
         },
     },
 }
-
-if BUILDING is False:
-    PLEX_CONFIG = {
-        'url': env('PLEX_URL'),
-        'token': env('PLEX_TOKEN'),
-    }

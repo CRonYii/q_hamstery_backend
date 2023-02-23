@@ -14,5 +14,11 @@ class HamsterySettings(SingletonModel):
     qbittorrent_password = models.CharField(
         max_length=255, blank=True, default='')
 
+    plex_enable = models.BooleanField(default=False)
+    plex_url = models.CharField(
+        max_length=2048, blank=True, default='')
+    plex_token = models.CharField(
+        max_length=2048, blank=True, default='')
+
     def __str__(self) -> str:
         return 'Hamstery Settings'

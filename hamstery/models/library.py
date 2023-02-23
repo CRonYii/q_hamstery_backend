@@ -451,8 +451,7 @@ class TvEpisode(models.Model):
         # delete all done downloads as well
         self.set_path('')
         # Update Plex
-        if plex_manager:
-            plex_manager.refresh_plex_library_by_filepath(self.get_folder())
+        plex_manager.refresh_plex_library_by_filepath(self.get_folder())
         return True
 
     def import_video(self, pathstr: str, manually: bool, mode='move') -> bool:
@@ -505,8 +504,7 @@ class TvEpisode(models.Model):
         self.status = TvEpisode.Status.READY
         if manually is True:
             self.cancel_related_downloads('downloading')
-        if plex_manager:
-            plex_manager.refresh_plex_library_by_filepath(self.get_folder())
+        plex_manager.refresh_plex_library_by_filepath(self.get_folder())
         return True
 
     def cancel_related_downloads(self, type: str):

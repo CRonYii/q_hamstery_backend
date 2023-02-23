@@ -24,3 +24,9 @@ class HamsterySettingsView(mixins.RetrieveModelMixin,
         from hamstery.qbittorrent import qbt
         [result, msg] = qbt.test_connection()
         return JsonResponse({'status': result, 'message': msg})
+
+    @action(methods=['get'], detail=True)
+    def plex_test_connection(self, request, pk=None):
+        from hamstery.plex import plex_manager
+        [result, msg] = plex_manager.test_connection()
+        return JsonResponse({'status': result, 'message': msg})
