@@ -30,16 +30,9 @@ class TvDownloadView(viewsets.GenericViewSet):
         return Response(data)
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
+        instance: TvDownload = self.get_object()
+        instance.cancel()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def perform_destroy(self, download: TvDownload):
-        if download.done is True and download.episode:
-            download.episode.remove_episode() # remove episode will delete download for us
-            download.episode.save()
-        else:
-            download.cancel()
 
     def append_extra_info(self, download):
         hash = '|'.join(map(lambda d: d['hash'], download))
