@@ -202,12 +202,7 @@ class TvShow(models.Model):
     async def scan(self):
         res = success()
         try:
-            tmdb_res = await tmdb_tv_show_details(self.tmdb_id, lang=self.storage.lib.lang)
-            if not tmdb_res.success:
-                return tmdb_res
-            details = tmdb_res.data()
-            seasons = details['seasons']
-            await self.scan_seasons(seasons)
+            await TvShow.objects.create_or_update_by_tmdb_id(self.storage, self.tmdb_id, self.path)
         except Exception as e:
             logger.error(traceback.format_exc())
             res.agg(failure('Failed to scan show %s: %s' %
