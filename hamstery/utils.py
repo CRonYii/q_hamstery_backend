@@ -211,7 +211,7 @@ def list_supplemental_file(src):
 
 
 EPISODE_NUMBER_RE = re.compile(
-    r'(?:[Ee][Pp]|[ E第【[])(\d{2,3}|[零一二三四五六七八九十百千]{1,6})(v\d)?[ 話话回集\].】-]')
+    r'(?:[Ee][Pp]|[ E第【[])(\d{2,3}|[零一二三四五六七八九十百千]{1,6})([vV]\d)?[ 話话回集\].】-]')
 
 
 def get_episode_number_from_title(title: str) -> int:
