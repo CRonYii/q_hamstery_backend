@@ -552,7 +552,7 @@ class TvEpisode(models.Model):
     def download_by_url(self, urls):
         if self.is_manually_ready():
             return False
-        from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
+        from ..qbt_monitor import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
                                    qbt)
         res = qbt.client.torrents_add(
             urls=urls,
@@ -568,7 +568,7 @@ class TvEpisode(models.Model):
     def download_by_torrents(self, torrents):
         if self.is_manually_ready():
             return False
-        from ..qbittorrent import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
+        from ..qbt_monitor import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
                                    qbt)
         res = qbt.client.torrents_add(
             torrent_files=torrents,
@@ -582,7 +582,7 @@ class TvEpisode(models.Model):
             return False
 
     def monitor_download_by_url(self, sub_id, urls):
-        from ..qbittorrent import (HAMSTERY_CATEGORY, MONITORED_TV_TAG,
+        from ..qbt_monitor import (HAMSTERY_CATEGORY, MONITORED_TV_TAG,
                                    UNSCHEDULED_TV_TAG, qbt)
         res = qbt.client.torrents_add(
             urls=urls,
@@ -596,7 +596,7 @@ class TvEpisode(models.Model):
             return False
 
     def monitor_download_by_torrents(self, sub_id, torrents):
-        from ..qbittorrent import (HAMSTERY_CATEGORY, MONITORED_TV_TAG,
+        from ..qbt_monitor import (HAMSTERY_CATEGORY, MONITORED_TV_TAG,
                                    UNSCHEDULED_TV_TAG, qbt)
         res = qbt.client.torrents_add(
             torrent_files=torrents,
