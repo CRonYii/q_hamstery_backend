@@ -6,6 +6,9 @@ from django.dispatch import receiver
 
 from hamstery.models.settings import HamsterySettings
 
+logger = logging.getLogger(__name__)
+
+
 class SettingsHandler:
 
     def __init__(self, fields, action):
@@ -46,9 +49,22 @@ class HamsterySettingsManager:
     def manual_update(self):
         self.update(HamsterySettings.singleton())
 
+
 manager = HamsterySettingsManager()
 
 
+UWSGI_HAMSTERY_SETTINGS_UPDATE = 1
+
 @receiver(post_save, sender=HamsterySettings, dispatch_uid='hamstery_settings_update_handler')
 def hamstery_settings_post_save(sender, instance: HamsterySettings, **kwargs):
-    manager.update(instance)
+    try:
+        import uwsgi
+        uwsgi.signal(UWSGI_HAMSTERY_SETTINGS_UPDATE)
+        logger.info('Dispatched uWSGI signal to update hamstery settings')
+    except ImportError:
+        manager.update(instance)
+
+
+def hamstery_settings_uwsgi_handler(num):
+    manager.manual_update()
+    logger.info('Received uWSGI signal to update hamstery settings')

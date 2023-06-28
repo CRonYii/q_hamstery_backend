@@ -11,3 +11,11 @@ class HamsteryConfig(AppConfig):
 
     def ready(self) -> None:
         logger.info('Timezone: %s' % (tzlocal.get_localzone()))
+        try:
+            import uwsgi
+            from hamstery.hamstery_settings import hamstery_settings_uwsgi_handler, UWSGI_HAMSTERY_SETTINGS_UPDATE
+            logger.info('Registered uWSGI signal handlers')
+            uwsgi.register_signal(UWSGI_HAMSTERY_SETTINGS_UPDATE, "workers",
+                            hamstery_settings_uwsgi_handler)
+        except ImportError as e:
+            print(str(e))
