@@ -10,6 +10,7 @@ from django.dispatch import receiver
 
 from hamstery.models import Indexer, TvEpisode, TvSeason
 from hamstery.hamstery_settings import manager
+from hamstery.qbittorrent import qbt
 
 logger = logging.getLogger(__name__)
 
