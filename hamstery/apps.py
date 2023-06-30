@@ -1,7 +1,9 @@
 import logging
 
-import tzlocal
 from django.apps import AppConfig
+from django.utils import timezone
+
+from hamstery import utils
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +12,8 @@ class HamsteryConfig(AppConfig):
     name = 'hamstery'
 
     def ready(self) -> None:
-        logger.info('Timezone: %s' % (tzlocal.get_localzone()))
+        logger.info('Timezone: %s' % (utils.tz))
+        logger.info('Starup Time: %s' % (utils.now().strftime('%Y-%m-%d %H:%M:%S')))
         try:
             import uwsgi
             from hamstery.hamstery_settings import hamstery_settings_uwsgi_handler, UWSGI_HAMSTERY_SETTINGS_UPDATE

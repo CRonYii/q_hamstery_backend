@@ -2,12 +2,14 @@ import base64
 import json
 import os
 import re
+from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from typing import Sequence
 
 import cn2an
 import psutil
+import tzlocal
 from django import forms
 from django.core.exceptions import ValidationError
 from django.http import (HttpResponseBadRequest, HttpResponseNotFound,
@@ -15,6 +17,10 @@ from django.http import (HttpResponseBadRequest, HttpResponseNotFound,
 from rest_framework import status
 from rest_framework.response import Response
 
+tz = tzlocal.get_localzone()
+
+def now():
+    return datetime.now(tz)
 
 def validate_directory_exist(dir):
     if not os.path.isdir(dir):
