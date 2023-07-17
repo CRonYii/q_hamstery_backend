@@ -31,6 +31,7 @@ def list_file(path) -> Sequence[Sequence[str]]:
     for (dirpath, _, filenames) in os.walk(path):
         return [[dirpath, filename] for filename in filenames]
 
+
 def tree_media(path):
     all_dirs = []
     all_files = []
@@ -199,9 +200,11 @@ SUPPLEMENTAL_FILE_RE = re.compile(r'.*?\.(ass|ssa|srt|idx|sub|mka)$')
 def is_supplemental_file_extension(name):
     return SUPPLEMENTAL_FILE_RE.match(name)
 
+
 def is_supplemental_file(src, name):
     basename, _ = os.path.basename(name).split('.', maxsplit=1)
     return src == basename and is_supplemental_file_extension(name)
+
 
 def list_supplemental_file(src):
     files = list_file(os.path.dirname(src))
@@ -210,8 +213,14 @@ def list_supplemental_file(src):
         yield res
 
 
-EPISODE_NUMBER_RE = re.compile(
-    r'(?:[Ee][Pp]|[ E第【[])(\d{2,3}|[零一二三四五六七八九十百千]{1,6})([vV]\d)?[ 話话回集\].】-]')
+EPISODE_NUMBER_RE = [
+    re.compile(
+        r'(?:[Ee][Pp]|[E第])(\d{2,3}|[零一二三四五六七八九十百千]{1,6})([vV]\d)?[話话回集.-]'),
+    re.compile(
+        r'(?:- |[【[])(\d{2,3}|[零一二三四五六七八九十百千]{1,6})([vV]\d)?[\]】 .-]'),
+    re.compile(
+        r'(?:[ ])(\d{2,3}|[零一二三四五六七八九十百千]{1,6})([vV]\d)?[ .-]'),
+]
 
 
 def get_episode_number_from_title(title: str) -> int:
@@ -221,7 +230,11 @@ def get_episode_number_from_title(title: str) -> int:
     except ValueError:
         pass
 
-    match = EPISODE_NUMBER_RE.search(title)
+    for re in EPISODE_NUMBER_RE:
+        match = re.search(title)
+        if match:
+            break
+    
     if not match:
         return None
 
