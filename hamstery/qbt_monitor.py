@@ -3,7 +3,6 @@ import os
 import traceback
 from typing import Any, Callable
 
-import tzlocal
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from django.conf import settings
@@ -15,10 +14,11 @@ from hamstery.models.show_subscrition import ShowSubscription
 from hamstery.qbittorrent import qbt
 from hamstery.utils import (Result, failure, is_supplemental_file_extension,
                             is_video_extension, success)
+from hamstery import utils
 
 logger = logging.getLogger(__name__)
 
-scheduler = BlockingScheduler(timezone=str(tzlocal.get_localzone()))
+scheduler = BlockingScheduler(timezone=str(utils.tz))
 
 
 def schedule_qbittorrent_job():
