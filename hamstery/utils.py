@@ -207,9 +207,9 @@ def is_supplemental_file_extension(name):
     return SUPPLEMENTAL_FILE_RE.match(name)
 
 
-def is_supplemental_file(src, name):
-    basename, _ = os.path.basename(name).split('.', maxsplit=1)
-    return src == basename and is_supplemental_file_extension(name)
+def is_supplemental_file(src: str, name: str):
+    basename, _ = os.path.splitext(os.path.basename(name))
+    return basename.startswith(src) and is_supplemental_file_extension(name)
 
 
 def list_supplemental_file(src):
