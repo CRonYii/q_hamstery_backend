@@ -495,7 +495,7 @@ class TvEpisode(models.Model):
             final_basename, _ = os.path.splitext(os.path.basename(pathstr))
             for [p, f] in list_supplemental_file(src):
                 sup_file = os.path.join(p, f)
-                _, sup_ext = f.split('.', maxsplit=1)
+                _, sup_ext = os.path.splitext(f)
                 try:
                     import_single_file(sup_file, os.path.join(self.get_folder(), "%s.%s" % (final_basename, sup_ext)))
                 except OSError as e:
