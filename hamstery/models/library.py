@@ -225,10 +225,15 @@ class TvShow(models.Model):
         await asyncio.gather(*routines)
 
     def get_number_of_ready_episodes(self):
-        count = 0
+        count = {
+            'ready': 0,
+            'missing': 0,
+        }
         seasons: List[TvSeason] = self.seasons.all()
         for season in seasons:
-            count += season.get_number_of_ready_episodes()
+            counts = season.get_number_of_ready_episodes()
+            count['ready'] += counts['ready']
+            count['missing'] += counts['missing']
         return count
 
     def __str__(self):
@@ -365,7 +370,11 @@ class TvSeason(models.Model):
     
     def get_number_of_ready_episodes(self):
         eps: List[TvEpisode] = self.episodes.all()
-        return len(list(filter(lambda ep: ep.status == TvEpisode.Status.READY, eps)))
+        ready = len(list(filter(lambda ep: ep.status == TvEpisode.Status.READY, eps)))
+        return {
+            'ready': ready,
+            'missing': self.number_of_episodes - ready,
+        }
 
     def __str__(self):
         return '%s - S%02d (%s)' % (self.show.name, self.season_number, self.name)

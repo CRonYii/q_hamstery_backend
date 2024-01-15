@@ -57,11 +57,7 @@ class TvShowView(viewsets.ReadOnlyModelViewSet):
     @action(methods=['get'], detail=True)
     def number_of_episodes(self, request, pk=None):
         show: TvShow = TvShow.objects.get(pk=pk)
-        ready_n = show.get_number_of_ready_episodes()
-        return JsonResponse({
-            'ready': ready_n,
-            'missing': show.number_of_episodes - ready_n,
-        })
+        return JsonResponse(show.get_number_of_ready_episodes())
 
 
 class TvSeasonView(viewsets.ReadOnlyModelViewSet):
@@ -94,11 +90,7 @@ class TvSeasonView(viewsets.ReadOnlyModelViewSet):
     @action(methods=['get'], detail=True)
     def number_of_episodes(self, request, pk=None):
         season: TvSeason = TvSeason.objects.get(pk=pk)
-        ready_n = season.get_number_of_ready_episodes()
-        return JsonResponse({
-            'ready': ready_n,
-            'missing': season.number_of_episodes - ready_n,
-        })
+        return JsonResponse(season.get_number_of_ready_episodes())
 
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
