@@ -160,16 +160,12 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'backend': {
-            'class': 'logging.FileHandler',
-            'filename': 'app_data/backend.log',
-            'encoding': 'utf8',
-            'formatter': 'simple',
-        },
         'hamstery': {
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'app_data/hamstery.log',
             'encoding': 'utf8',
+            'maxBytes': 1048576,  # 1024 * 1024 * 10B = 10MB
+            'backupCount': 2,
             'formatter': 'verbose',
         },
         'console': {
