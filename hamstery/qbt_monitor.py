@@ -10,7 +10,7 @@ from django.conf import settings
 from hamstery.hamstery_settings import manager
 from hamstery.models.download import MonitoredTvDownload, TvDownload
 from hamstery.models.library import TvEpisode
-from hamstery.models.show_subscrition import ShowSubscription
+from hamstery.models.show_subscription import ShowSubscription
 from hamstery.qbittorrent import qbt
 from hamstery.utils import (Result, failure, is_supplemental_file_extension,
                             is_video_extension, success)

@@ -4,7 +4,7 @@ from django.utils import timezone
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from hamstery.models.show_subscrition import show_subscription_monitor_step
+from hamstery.models.show_subscription import show_subscription_monitor_step
 from hamstery.qbittorrent import qbt
 from hamstery import utils
 

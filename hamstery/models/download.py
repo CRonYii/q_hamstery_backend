@@ -2,7 +2,7 @@ from django.db import models
 import logging
 
 from hamstery.models.library import TvEpisode
-from hamstery.models.show_subscrition import ShowSubscription
+from hamstery.models.show_subscription import ShowSubscription
 
 logger = logging.getLogger(__name__)
 

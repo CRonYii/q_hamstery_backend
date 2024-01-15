@@ -5,7 +5,7 @@ from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
 from ..serializers import ShowSubscriptionSerializer
-from ..models.show_subscrition import ShowSubscription
+from ..models.show_subscription import ShowSubscription
 
 # Create your views here.
 
