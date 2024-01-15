@@ -224,6 +224,13 @@ class TvShow(models.Model):
                 self, self.tmdb_id, season_number, path))
         await asyncio.gather(*routines)
 
+    def get_number_of_ready_episodes(self):
+        count = 0
+        seasons: List[TvSeason] = self.seasons.all()
+        for season in seasons:
+            count += season.get_number_of_ready_episodes()
+        return count
+
     def __str__(self):
         return self.name
 
@@ -362,6 +369,10 @@ class TvSeason(models.Model):
             matched_torrents = list(filter(filter_torrent, torrents))
             results[ep.episode_number] = matched_torrents
         return results
+    
+    def get_number_of_ready_episodes(self):
+        eps: List[TvEpisode] = self.episodes.all()
+        return len(list(filter(lambda ep: ep.status == TvEpisode.Status.READY, eps)))
 
     def __str__(self):
         return '%s - S%02d (%s)' % (self.show.name, self.season_number, self.name)

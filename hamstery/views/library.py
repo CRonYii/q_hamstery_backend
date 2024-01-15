@@ -1,10 +1,11 @@
 from asgiref.sync import async_to_sync
+from django.http import JsonResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from ..forms import DownloadForm, ImportForm, SeasonSearchForm, TMDBForm
-from ..models import TvEpisode, TvLibrary, TvSeason, TvShow, TvStorage, Indexer
+from ..models import Indexer, TvEpisode, TvLibrary, TvSeason, TvShow, TvStorage
 from ..serializers import (TvEpisodeSerializer, TvLibrarySerializer,
                            TvSeasonSerializer, TvShowSerializer,
                            TvStorageSerializer)
@@ -53,6 +54,15 @@ class TvShowView(viewsets.ReadOnlyModelViewSet):
         show.storage.lib  # pre-fetch lib here
         return show.scan().into_response()
 
+    @action(methods=['get'], detail=True)
+    def number_of_episodes(self, request, pk=None):
+        show: TvShow = TvShow.objects.get(pk=pk)
+        ready_n = show.get_number_of_ready_episodes()
+        return JsonResponse({
+            'ready': ready_n,
+            'missing': show.number_of_episodes - ready_n,
+        })
+
 
 class TvSeasonView(viewsets.ReadOnlyModelViewSet):
     queryset = TvSeason.objects.all()
@@ -81,6 +91,14 @@ class TvSeasonView(viewsets.ReadOnlyModelViewSet):
         season.show.storage.lib  # pre-fetch lib here
         return season.scan().into_response()
 
+    @action(methods=['get'], detail=True)
+    def number_of_episodes(self, request, pk=None):
+        season: TvSeason = TvSeason.objects.get(pk=pk)
+        ready_n = season.get_number_of_ready_episodes()
+        return JsonResponse({
+            'ready': ready_n,
+            'missing': season.number_of_episodes - ready_n,
+        })
 
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
