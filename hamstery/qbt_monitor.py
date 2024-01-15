@@ -135,9 +135,9 @@ def handle_unscheduled_tv_task(task):
     return success('"%s" Download scheduled' % filename)
 
 
-def is_valid_tv_download_file(file):
-    name = file['name']
-    return is_video_extension(name) or is_supplemental_file_extension(name)
+def is_valid_tv_download_file(file, target_file):
+    name: str = file['name']
+    return target_file in name and (is_video_extension(name) or is_supplemental_file_extension(name))
 
 
 def handle_fetching_tv_task(task):
@@ -166,11 +166,12 @@ def handle_fetching_tv_task(task):
         filename = target_files[0]['name']
 
     download.filename = filename
+    target_name, _ = os.path.splitext(os.path.basename(filename))
     download.save()
     if len(files) != 1:
         # We only download the video file at this time
         do_not_download_files = list(map(lambda f: f['index'], filter(
-            lambda f: not is_valid_tv_download_file(f), files)))
+            lambda f: not is_valid_tv_download_file(f, target_name), files)))
         if len(do_not_download_files) != 0:
             qbt.client.torrents_file_priority(
                 hash, do_not_download_files, priority=0)
