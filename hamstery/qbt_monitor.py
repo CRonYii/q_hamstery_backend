@@ -154,10 +154,16 @@ def handle_fetching_tv_task(task):
     if len(target_files) == 0:
         return failure('No video file found in download')
     if len(target_files) > 1:
-        return failure('Unsupported multi files torrent episode download')
-
-    target_file = target_files[0]
-    filename = target_file['name']
+        found = False
+        for target_file in target_files:
+            if download.episode.episode_number == utils.get_episode_number_from_title(target_file['name']):
+                filename = target_file['name']
+                found = True
+                break
+        if not found:
+            return failure('Failed to locate target video file from a multiple video files torrent for single episode download')
+    else:
+        filename = target_files[0]['name']
 
     download.filename = filename
     download.save()
