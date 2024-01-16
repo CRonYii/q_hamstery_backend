@@ -225,7 +225,13 @@ class TvShow(models.Model):
                 async for _ in season.episodes.filter(~Q(status=TvEpisode.Status.MISSING)):
                     found = True
                     break
-                if found == 0:
+                if not found:
+                    path = Path(season.path)
+                    if path.exists() and len(os.listdir(path)) == 0:
+                        try:
+                            os.remove(path)
+                        except:
+                            pass
                     await season.adelete()
                 else:
                     logger.warn('Failed to remove %s - Season %02d: local video file linked to it already.' % (season.show.name, season.season_number))
