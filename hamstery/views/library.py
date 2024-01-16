@@ -68,6 +68,7 @@ class TvShowView(viewsets.GenericViewSet):
         serializer = self.get_serializer(show)
         data = serializer.data
         data['number_of_ready_episodes'] = show.get_number_of_ready_episodes()
+        data['warn_removed'] = show.is_warn_removed()
         return data
 
 

@@ -229,6 +229,8 @@ class TvShow(models.Model):
                     await season.adelete()
                 else:
                     logger.warn('Failed to remove %s - Season %02d: local video file linked to it already.' % (season.show.name, season.season_number))
+                    season.warn_removed = True
+                    await season.asave()
 
     def get_number_of_ready_episodes(self):
         count = {
@@ -241,6 +243,13 @@ class TvShow(models.Model):
             count['ready'] += counts['ready']
             count['missing'] += counts['missing']
         return count
+
+    def is_warn_removed(self):
+        for season in self.seasons.all():
+            if season.is_warn_removed():
+                return True
+
+        return False
 
     def __str__(self):
         return self.name
@@ -272,6 +281,7 @@ class TvSeasonManager(models.Manager):
             season.poster_path = poster_path
             season.air_date = air_date
             season.path = dirpath
+            season.warn_removed = False
         except TvSeason.DoesNotExist:
             # or create
             if dirpath == '':
@@ -305,6 +315,7 @@ class TvSeason(models.Model):
     number_of_episodes = models.IntegerField()
     poster_path = models.CharField(max_length=1024, blank=True, default='')
     air_date = models.DateField(blank=True, null=True)
+    warn_removed = models.BooleanField(default=False)
 
     objects: TvSeasonManager = TvSeasonManager()
 
@@ -345,6 +356,8 @@ class TvSeason(models.Model):
                     await episode.adelete()
                 else:
                     logger.warn('Failed to remove %s - Season %02d EP %02d: local video file linked to it already.' % (episode.season.show.name, episode.season_number, episode.episode_number))
+                    episode.warn_removed = True
+                    await episode.asave()
 
     def search_episodes_from_indexer(self, query: str, indexer: Indexer, offset=0, exclude=''):
         eps: List[TvEpisode] = self.episodes.all()
@@ -382,6 +395,12 @@ class TvSeason(models.Model):
             'missing': self.number_of_episodes - ready,
         }
 
+    def is_warn_removed(self):
+        if self.warn_removed:
+            return True
+
+        return self.episodes.filter(warn_removed=True).exists()
+
     def __str__(self):
         return '%s - S%02d (%s)' % (self.show.name, self.season_number, self.name)
 
@@ -406,6 +425,7 @@ class TvEpisodeManager(models.Manager):
             episode.season_number = season_number
             episode.poster_path = poster_path
             episode.air_date = air_date
+            episode.warn_removed = False
             await sync_to_async(episode.set_path)(dirpath)
         except TvEpisode.DoesNotExist:
             # or create
@@ -438,6 +458,7 @@ class TvEpisode(models.Model):
     episode_number = models.IntegerField(db_index=True)
     poster_path = models.CharField(max_length=1024, blank=True, default='')
     air_date = models.DateField(blank=True, null=True)
+    warn_removed = models.BooleanField(default=False)
 
     objects: TvEpisodeManager = TvEpisodeManager()
 
@@ -453,6 +474,9 @@ class TvEpisode(models.Model):
 
     def remove_episode(self):
         if self.status == TvEpisode.Status.MISSING:
+            return True
+        if self.path == '':
+            self.set_path('')
             return True
         # Directly delete file on drive
         path = Path(self.path)

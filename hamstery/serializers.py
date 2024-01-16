@@ -21,14 +21,14 @@ class TvEpisodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TvEpisode
         fields = ('id', 'season', 'tmdb_id', 'status', 'name', 'season_number',
-                  'episode_number', 'poster_path', 'air_date')
+                  'episode_number', 'poster_path', 'air_date', 'warn_removed')
 
 
 class TvSeasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = TvSeason
         fields = ('id', 'show', 'tmdb_id', 'name', 'season_number',
-                  'number_of_episodes', 'poster_path', 'air_date')
+                  'number_of_episodes', 'poster_path', 'air_date', 'warn_removed')
 
 
 class TvShowSerializer(serializers.ModelSerializer):
