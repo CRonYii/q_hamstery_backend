@@ -210,19 +210,25 @@ class TvShow(models.Model):
         return res
 
     async def scan_seasons(self, seasons):
-        # clear removed seasons
-        async for season in self.seasons.all():
-            if not os.path.isdir(season.path):
-                await season.adelete()
+        season_set = set()
         # scan seasons based on show's dir tree
         season_map = self.get_season_to_dir_map()
-        routines = []
         for season in seasons:
             season_number = season['season_number']
             path = season_map.get(season_number, '')
-            routines.append(TvSeason.objects.create_or_update_by_tmdb_id(
-                self, self.tmdb_id, season_number, path))
-        await asyncio.gather(*routines)
+            await TvSeason.objects.create_or_update_by_tmdb_id(
+                self, self.tmdb_id, season_number, path)
+            season_set.add(season['id'])
+        async for season in self.seasons.all():
+            if season.tmdb_id not in season_set:
+                found = False
+                async for _ in season.episodes.filter(~Q(status=TvEpisode.Status.MISSING)):
+                    found = True
+                    break
+                if found == 0:
+                    await season.adelete()
+                else:
+                    logger.warn('Failed to remove %s - Season %02d: local video file linked to it already.' % (season.show.name, season.season_number))
 
     def get_number_of_ready_episodes(self):
         count = {
@@ -327,18 +333,18 @@ class TvSeason(models.Model):
     async def scan_episodes(self, episodes):
         # We should not need to worry about clearing episodes unless # of episodes is reduced (which is unlikely)
         episode_map = self.get_episode_to_dir_map()
-        ep_number_set = set()
-        async for ep in self.episodes.all():
-            ep_number_set.add(ep.episode_number)
+        episode_set = set()
         for episode in episodes:
             episode_number = episode['episode_number']
             path = episode_map.get(episode_number, '')
             await TvEpisode.objects.create_or_update_by_episode_number(season=self, details=episode, dirpath=path)
-            if episode_number in ep_number_set:
-                ep_number_set.remove(episode_number)
-        for ep_n in ep_number_set:
-            async for ep in self.episodes.filter(episode_number=ep_n):
-                await ep.adelete()
+            episode_set.add(episode['id'])
+        async for episode in self.episodes.all():
+            if episode.tmdb_id not in episode_set:
+                if episode.status == TvEpisode.Status.MISSING:
+                    await episode.adelete()
+                else:
+                    logger.warn('Failed to remove %s - Season %02d EP %02d: local video file linked to it already.' % (episode.season.show.name, episode.season_number, episode.episode_number))
 
     def search_episodes_from_indexer(self, query: str, indexer: Indexer, offset=0, exclude=''):
         eps: List[TvEpisode] = self.episodes.all()
