@@ -1,5 +1,6 @@
+from typing import List
+
 from asgiref.sync import async_to_sync
-from django.http import JsonResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -43,7 +44,7 @@ class TvStorageView(viewsets.ModelViewSet):
         return Response('Ok')
 
 
-class TvShowView(viewsets.ReadOnlyModelViewSet):
+class TvShowView(viewsets.GenericViewSet):
     queryset = TvShow.objects.all()
     serializer_class = TvShowSerializer
     filterset_fields = ['storage']
@@ -54,13 +55,23 @@ class TvShowView(viewsets.ReadOnlyModelViewSet):
         show.storage.lib  # pre-fetch lib here
         return show.scan().into_response()
 
-    @action(methods=['get'], detail=True)
-    def number_of_episodes(self, request, pk=None):
-        show: TvShow = TvShow.objects.get(pk=pk)
-        return JsonResponse(show.get_number_of_ready_episodes())
+    def list(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        return Response(list(map(self.generate_data, queryset)))
+
+    def retrieve(self, request, pk=None):
+        instance = self.get_object()
+        return Response(self.generate_data(instance))
+    
+    def generate_data(self, show: TvShow):
+        serializer = self.get_serializer(show)
+        data = serializer.data
+        data['number_of_ready_episodes'] = show.get_number_of_ready_episodes()
+        return data
 
 
-class TvSeasonView(viewsets.ReadOnlyModelViewSet):
+class TvSeasonView(viewsets.GenericViewSet):
     queryset = TvSeason.objects.all()
     serializer_class = TvSeasonSerializer
     filterset_fields = ['show']
@@ -86,11 +97,21 @@ class TvSeasonView(viewsets.ReadOnlyModelViewSet):
         season: TvSeason = TvSeason.objects.get(pk=pk)
         season.show.storage.lib  # pre-fetch lib here
         return season.scan().into_response()
+    
+    def list(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        return Response(list(map(self.generate_data, queryset)))
 
-    @action(methods=['get'], detail=True)
-    def number_of_episodes(self, request, pk=None):
-        season: TvSeason = TvSeason.objects.get(pk=pk)
-        return JsonResponse(season.get_number_of_ready_episodes())
+    def retrieve(self, request, pk=None):
+        instance = self.get_object()
+        return Response(self.generate_data(instance))
+    
+    def generate_data(self, season: TvSeason):
+        serializer = self.get_serializer(season)
+        data = serializer.data
+        data['number_of_ready_episodes'] = season.get_number_of_ready_episodes()
+        return data
 
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
