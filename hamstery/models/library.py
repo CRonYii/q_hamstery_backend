@@ -61,12 +61,12 @@ class TvStorage(models.Model):
             return success()
         res = success(self.id)
         self.scanning = True
-        await sync_to_async(self.save)()
+        await self.asave()
         try:
             logger.info('scanning storage %s' % self.path)
             async for show in self.shows.all():
                 if not os.path.isdir(show.path):
-                    await sync_to_async(show.delete)()
+                    await show.adelete()
             routines = []
             for (dirpath, dir) in list_dir(self.path):
                 try:
@@ -83,7 +83,7 @@ class TvStorage(models.Model):
                     (self.path, str(e))))
         finally:
             self.scanning = False
-            await sync_to_async(self.save)()
+            await self.asave()
             return res
 
     def __str__(self):
@@ -139,7 +139,7 @@ class TvShowManager(models.Manager):
                 poster_path=poster_path,
                 air_date=air_date
             )
-        await sync_to_async(show.save)()
+        await show.asave()
         logger.info('saved show %s' % (name))
         seasons = details['seasons']
         await show.scan_seasons(seasons)
@@ -213,7 +213,7 @@ class TvShow(models.Model):
         # clear removed seasons
         async for season in self.seasons.all():
             if not os.path.isdir(season.path):
-                await sync_to_async(season.delete)()
+                await season.adelete()
         # scan seasons based on show's dir tree
         season_map = self.get_season_to_dir_map()
         routines = []
@@ -285,7 +285,7 @@ class TvSeasonManager(models.Manager):
                 poster_path=poster_path,
                 air_date=air_date,
             )
-        await sync_to_async(season.save)()
+        await season.asave()
         await season.scan_episodes(episodes)
 
 
@@ -338,7 +338,7 @@ class TvSeason(models.Model):
                 ep_number_set.remove(episode_number)
         for ep_n in ep_number_set:
             async for ep in self.episodes.filter(episode_number=ep_n):
-                await sync_to_async(ep.delete)()
+                await ep.adelete()
 
     def search_episodes_from_indexer(self, query: str, indexer: Indexer, offset=0, exclude=''):
         eps: List[TvEpisode] = self.episodes.all()
@@ -414,7 +414,7 @@ class TvEpisodeManager(models.Manager):
                 poster_path=poster_path,
                 air_date=air_date,
             )
-        await sync_to_async(episode.save)()
+        await episode.asave()
 
 
 class TvEpisode(models.Model):
