@@ -1,7 +1,7 @@
 aiohttp==3.9.1
 asgiref==3.7.2
 cn2an==0.5.22
-Django==4.2.8
+Django==4.2.9
 djangorestframework==3.14.0
 django-environ==0.10.0
 django-filter==23.5
