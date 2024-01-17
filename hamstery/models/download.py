@@ -25,7 +25,13 @@ class TvDownload(Download):
         from ..qbittorrent import qbt
         qbt.client.torrents_delete(True, self.hash)
         self.delete()
+    
+    def get_adjusted_episode_number(self):
+        return self.episode.episode_number
 
 class MonitoredTvDownload(TvDownload):
     subscription = models.ForeignKey(
         ShowSubscription, related_name='downloads', on_delete=models.DO_NOTHING, parent_link=True)
+    
+    def get_adjusted_episode_number(self):
+        return self.episode.episode_number + self.subscription.offset
