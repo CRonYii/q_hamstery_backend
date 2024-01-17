@@ -112,6 +112,7 @@ class TvSeasonView(viewsets.GenericViewSet):
         serializer = self.get_serializer(season)
         data = serializer.data
         data['number_of_ready_episodes'] = season.get_number_of_ready_episodes()
+        data['warn_removed'] = season.is_warn_removed()
         return data
 
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
