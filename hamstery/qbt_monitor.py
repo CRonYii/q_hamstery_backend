@@ -136,7 +136,7 @@ def handle_unscheduled_tv_task(task):
 
 
 def is_valid_tv_download_file(file, target_file):
-    name: str = file['name']
+    name: str = os.path.basename(file['name'])
     return target_file in name and (is_video_extension(name) or is_supplemental_file_extension(name))
 
 
