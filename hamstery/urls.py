@@ -15,6 +15,7 @@ router.register(r'tvdownload', views.TvDownloadView, 'tv-download')
 router.register(r'monitored-tvdownload', views.MonitoredDownloadView, 'monitored-tv-download')
 router.register(r'show-subscription', views.ShowSubscriptionView, 'show-subscription')
 router.register(r'settings', views.HamsterySettingsView, 'settings')
+router.register(r'stats', views.HamsteryStatsView, 'stats')
 
 urlpatterns = [
     path('api/', include(router.urls)),
@@ -22,4 +23,5 @@ urlpatterns = [
     path('auth/logout', views.logout_view),
     path('auth/test', views.test_auth_view),
     path('api/media/list', views.media_list_root_view),
+    path('api/media/episode_number', views.extract_episode_number_from_title_view),
 ]

@@ -230,6 +230,13 @@ EPISODE_NUMBER_RE = [
 
 
 def get_episode_number_from_title(title: str) -> int:
+    from hamstery.models.settings import HamsterySettings
+    from hamstery.openai import openai_manager
+    settings = HamsterySettings.singleton()
+    if settings.openai_title_parser_mode == HamsterySettings.TitleParserMode.PRIMARY:
+        ep = openai_manager.get_episode_number_from_title(title)
+        if ep:
+            return ep
     try:
         ep = int(title)
         return ep
@@ -242,6 +249,8 @@ def get_episode_number_from_title(title: str) -> int:
             break
     
     if not match:
+        if settings.openai_title_parser_mode == HamsterySettings.TitleParserMode.STANDBY:
+            return openai_manager.get_episode_number_from_title(title)
         return None
 
     ep = match.group(1)

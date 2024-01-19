@@ -1,8 +1,6 @@
 from rest_framework import serializers
 
-from .models import (HamsterySettings, Indexer, MonitoredTvDownload,
-                     ShowSubscription, Torznab, TvDownload, TvEpisode,
-                     TvLibrary, TvSeason, TvShow, TvStorage)
+from .models import *
 
 
 class IndexerSerializer(serializers.ModelSerializer):
@@ -88,4 +86,9 @@ class ShowSubscriptionSerializer(serializers.ModelSerializer):
 class HamsterySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = HamsterySettings
+        fields = '__all__'
+
+class HamsteryStatsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HamsteryStats
         fields = '__all__'

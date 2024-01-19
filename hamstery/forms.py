@@ -28,3 +28,6 @@ class LoginForm(forms.Form):
 
 class ListMediaForm(forms.Form):
     path = forms.CharField(required=False)
+
+class EpisodeNumberForm(forms.Form):
+    title = forms.CharField(required=True)

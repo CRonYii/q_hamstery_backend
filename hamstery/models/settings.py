@@ -20,5 +20,15 @@ class HamsterySettings(SingletonModel):
     plex_token = models.CharField(
         max_length=2048, blank=True, default='')
 
+    openai_api_key = models.CharField(
+        max_length=2048, blank=True, default='')
+    class TitleParserMode(models.IntegerChoices):
+        DISABLED = 1
+        PRIMARY = 2
+        STANDBY = 3
+    openai_title_parser_mode = models.IntegerField(choices=TitleParserMode.choices, default=TitleParserMode.DISABLED)
+    openai_title_parser_model = models.CharField(
+        max_length=255, blank=True, default='')
+
     def __str__(self) -> str:
         return 'Hamstery Settings'

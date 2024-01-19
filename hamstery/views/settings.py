@@ -30,3 +30,8 @@ class HamsterySettingsView(mixins.RetrieveModelMixin,
         from hamstery.plex import plex_manager
         [result, msg] = plex_manager.test_connection()
         return JsonResponse({'status': result, 'message': msg})
+
+    @action(methods=['get'], detail=True)
+    def openai_get_models(self, request, pk=None):
+        from hamstery.openai import openai_manager
+        return JsonResponse({'models': openai_manager.list_models() })

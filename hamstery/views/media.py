@@ -3,8 +3,9 @@ from pathlib import Path
 
 from django.http import HttpResponseBadRequest, JsonResponse
 
-from hamstery.forms import ListMediaForm
-from hamstery.utils import (GET, list_dir_and_file, list_root_storages,
+from hamstery.forms import *
+from hamstery.utils import (GET, get_episode_number_from_title,
+                            list_dir_and_file, list_root_storages,
                             need_authentication, validate_params)
 
 
@@ -20,3 +21,12 @@ def media_list_root_view(request):
         return JsonResponse(list_dir_and_file(path))
     else:
         return JsonResponse({'path': list_root_storages(), 'file': []})
+
+@GET
+@need_authentication
+@validate_params(EpisodeNumberForm)
+def extract_episode_number_from_title_view(request):
+    title = request.data['title']
+    episode_number = get_episode_number_from_title(title)
+    
+    return JsonResponse({ 'episode_number': episode_number })
