@@ -5,6 +5,7 @@ from functools import lru_cache
 
 from django.conf import settings
 from openai import OpenAI
+from openai.types import Model
 
 from hamstery.hamstery_settings import SettingsHandler, settings_manager
 from hamstery.models.settings import HamsterySettings
@@ -12,6 +13,8 @@ from hamstery.models.stats import HamsteryStats
 
 logger = logging.getLogger(__name__)
 
+def is_supported_model(model: Model):
+    return ('gpt-4-1106-preview' in model.id) or ('gpt-3.5-turbo-1106' in model.id)
 
 class OpenAIManager:
 
@@ -39,7 +42,7 @@ class OpenAIManager:
     def list_models(self):
         if not self.enable_openai:
             return []
-        models = (filter(lambda model: model.id.startswith('gpt-') or model.id.startswith('ft:gpt-'),  self.client.models.list()))
+        models = (filter(is_supported_model,  self.client.models.list()))
         return [{ 'id': model.id, 'created': model.created, 'owned_by': model.owned_by } for model in models]
 
     @lru_cache(maxsize=128)
