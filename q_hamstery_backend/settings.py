@@ -100,6 +100,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'app_data' / 'db.sqlite3',
+        'CONN_MAX_AGE': None,
     }
 }
 
