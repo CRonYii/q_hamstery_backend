@@ -7,7 +7,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from django.conf import settings
 
-from hamstery.hamstery_settings import manager
+from hamstery.hamstery_settings import settings_manager
 from hamstery.models.download import MonitoredTvDownload, TvDownload
 from hamstery.models.library import TvEpisode
 from hamstery.models.show_subscription import ShowSubscription
@@ -44,7 +44,7 @@ HAMSTERY_CATEGORY = "hamstery-download (%s)" % settings.HOST_NAME
 def qbittorrent_monitor_step():
     # django signals does not work outside of application.
     # so, we need to do polling update for settings...
-    manager.manual_update()
+    settings_manager.manual_update()
     if qbt.known_status is True:
         qbittorrent_handle_tv_downloads()
 

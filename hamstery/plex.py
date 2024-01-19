@@ -5,7 +5,7 @@ from pathlib import Path
 import requests
 from django.conf import settings
 
-from hamstery.hamstery_settings import SettingsHandler, manager
+from hamstery.hamstery_settings import SettingsHandler, settings_manager
 from hamstery.models.settings import HamsterySettings
 
 from .utils import is_subdirectory
@@ -85,9 +85,9 @@ class PlexManager:
     def __init__(self):
         if settings.BUILDING is True:
             return
-        instance = HamsterySettings.singleton()
+        instance = settings_manager.settings
         self.load_client(instance)
-        manager.register_settings_handler(SettingsHandler([
+        settings_manager.register_settings_handler(SettingsHandler([
             'plex_enable',
             'plex_url',
             'plex_token',

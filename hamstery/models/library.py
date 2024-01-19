@@ -331,7 +331,7 @@ class TvSeason(models.Model):
             if not is_video_extension(filename):
                 continue
             fullpath = os.path.join(path, filename)
-            episode_number = get_episode_number_from_title(filename)
+            episode_number = get_episode_number_from_title(filename, force_local=True)
             if episode_number:
                 episode_map[episode_number] = fullpath
         return episode_map

@@ -9,7 +9,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
 from hamstery.models import Indexer, TvEpisode, TvSeason
-from hamstery.hamstery_settings import manager
+from hamstery.hamstery_settings import settings_manager
 from hamstery.qbittorrent import qbt
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ class ShowSubscription(models.Model):
 
 
 def show_subscription_monitor_step():
-    manager.manual_update()
+    settings_manager.manual_update()
     if qbt.known_status is False:
         return
     logger.info('Show subscriptions monitor triggered')

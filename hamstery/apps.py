@@ -14,6 +14,10 @@ class HamsteryConfig(AppConfig):
     def ready(self) -> None:
         logger.info('Timezone: %s' % (utils.tz))
         logger.info('Starup Time: %s' % (utils.now().strftime('%Y-%m-%d %H:%M:%S')))
+        from hamstery.hamstery_settings import settings_manager
+        from hamstery.qbittorrent import qbt
+        from hamstery.plex import plex_manager
+        from hamstery.openai import openai_manager
         try:
             import uwsgi
             from hamstery.hamstery_settings import hamstery_settings_uwsgi_handler, UWSGI_HAMSTERY_SETTINGS_UPDATE

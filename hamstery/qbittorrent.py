@@ -5,7 +5,7 @@ from qbittorrentapi import exceptions as qbt_exceptions
 from django.conf import settings
 from packaging import version
 
-from hamstery.hamstery_settings import SettingsHandler, manager
+from hamstery.hamstery_settings import SettingsHandler, settings_manager
 from hamstery.models.settings import HamsterySettings
 
 logger = logging.getLogger(__name__)
@@ -23,9 +23,9 @@ class Qbittorrent:
     def __init__(self):
         if settings.BUILDING is True:
             return
-        instance = HamsterySettings.singleton()
+        instance = settings_manager.settings
         self.load_client(instance)
-        manager.register_settings_handler(SettingsHandler([
+        settings_manager.register_settings_handler(SettingsHandler([
             'qbittorrent_host',
             'qbittorrent_port',
             'qbittorrent_username',

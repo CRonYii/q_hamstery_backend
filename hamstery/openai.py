@@ -6,7 +6,7 @@ from functools import lru_cache
 from django.conf import settings
 from openai import OpenAI
 
-from hamstery.hamstery_settings import SettingsHandler, manager
+from hamstery.hamstery_settings import SettingsHandler, settings_manager
 from hamstery.models.settings import HamsterySettings
 from hamstery.models.stats import HamsteryStats
 
@@ -20,9 +20,9 @@ class OpenAIManager:
     def __init__(self):
         if settings.BUILDING is True:
             return
-        instance = HamsterySettings.singleton()
+        instance = settings_manager.settings
         self.load_client(instance)
-        manager.register_settings_handler(SettingsHandler([
+        settings_manager.register_settings_handler(SettingsHandler([
             'open_api_key',
         ], self.on_openai_config_update))
 
@@ -46,7 +46,7 @@ class OpenAIManager:
     def get_episode_number_from_title(self, title: str) -> int:
         if self.enable_handle_title is False:
             return None
-        settings = HamsterySettings.singleton()
+        settings = settings_manager.settings
         stats = HamsteryStats.singleton()
         try:
             logger.info("Querying OpenAI ChatCompletion API Model '%s' to extract episode number from '%s'" % (settings.openai_title_parser_model, title))

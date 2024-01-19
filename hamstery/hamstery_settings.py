@@ -50,7 +50,7 @@ class HamsterySettingsManager:
         self.update(HamsterySettings.singleton())
 
 
-manager = HamsterySettingsManager()
+settings_manager = HamsterySettingsManager()
 
 
 UWSGI_HAMSTERY_SETTINGS_UPDATE = 1
@@ -62,9 +62,9 @@ def hamstery_settings_post_save(sender, instance: HamsterySettings, **kwargs):
         uwsgi.signal(UWSGI_HAMSTERY_SETTINGS_UPDATE)
         logger.info('Dispatched uWSGI signal to update hamstery settings')
     except ImportError:
-        manager.update(instance)
+        settings_manager.update(instance)
 
 
 def hamstery_settings_uwsgi_handler(num):
-    manager.manual_update()
+    settings_manager.manual_update()
     logger.info('Received uWSGI signal to update hamstery settings')
