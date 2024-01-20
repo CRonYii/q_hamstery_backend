@@ -32,7 +32,7 @@ class TvSeasonSerializer(serializers.ModelSerializer):
 class TvShowSerializer(serializers.ModelSerializer):
     class Meta:
         model = TvShow
-        fields = ('id', 'storage', 'tmdb_id', 'name', 'number_of_episodes',
+        fields = ('id', 'lib', 'storage', 'tmdb_id', 'name', 'number_of_episodes',
                   'number_of_seasons', 'poster_path', 'air_date')
 
 

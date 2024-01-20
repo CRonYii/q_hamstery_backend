@@ -1,7 +1,8 @@
 from typing import List
 
 from asgiref.sync import async_to_sync
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -47,7 +48,10 @@ class TvStorageView(viewsets.ModelViewSet):
 class TvShowView(viewsets.GenericViewSet):
     queryset = TvShow.objects.all()
     serializer_class = TvShowSerializer
-    filterset_fields = ['storage']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['lib', 'storage']
+    search_fields = ['name']
+    ordering_fields = ['id', 'name', 'air_date']
 
     @action(methods=['post'], detail=True)
     def scan(self, request, pk=None):
@@ -57,8 +61,9 @@ class TvShowView(viewsets.GenericViewSet):
 
     def list(self, request):
         queryset = self.filter_queryset(self.get_queryset())
-        
-        return Response(list(map(self.generate_data, queryset)))
+        data = list(map(self.generate_data, queryset))
+
+        return Response(data)
 
     def retrieve(self, request, pk=None):
         instance = self.get_object()
