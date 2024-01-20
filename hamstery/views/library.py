@@ -1,9 +1,10 @@
-from typing import List
+from typing import OrderedDict
 
 from asgiref.sync import async_to_sync
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from ..forms import DownloadForm, ImportForm, SeasonSearchForm, TMDBForm
@@ -44,10 +45,22 @@ class TvStorageView(viewsets.ModelViewSet):
             storage, tmdb_id)
         return Response('Ok')
 
+class TvShowPaginator(PageNumberPagination):
+    page_size = 25
+    
+    def get_paginated_response(self, data):
+        return Response(OrderedDict([
+            ('count', self.page.paginator.count),
+            ('page_size', self.page_size),
+            ('page', self.page.number),
+            ('results', data)
+        ]))
+
 
 class TvShowView(viewsets.GenericViewSet):
     queryset = TvShow.objects.all()
     serializer_class = TvShowSerializer
+    pagination_class = TvShowPaginator
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['lib', 'storage']
     search_fields = ['name']
@@ -61,9 +74,10 @@ class TvShowView(viewsets.GenericViewSet):
 
     def list(self, request):
         queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.paginate_queryset(queryset)
         data = list(map(self.generate_data, queryset))
 
-        return Response(data)
+        return self.get_paginated_response(data)
 
     def retrieve(self, request, pk=None):
         instance = self.get_object()
