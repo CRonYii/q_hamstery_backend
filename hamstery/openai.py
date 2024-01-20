@@ -26,7 +26,7 @@ class OpenAIManager:
         instance = settings_manager.settings
         self.load_client(instance)
         settings_manager.register_settings_handler(SettingsHandler([
-            'open_api_key',
+            'openai_api_key', 'openai_title_parser_mode', 'openai_title_parser_model',
         ], self.on_openai_config_update))
 
     def load_client(self, instance: HamsterySettings):

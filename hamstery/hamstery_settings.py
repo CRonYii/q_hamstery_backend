@@ -17,7 +17,7 @@ class SettingsHandler:
 
     def should_handle(self, old: HamsterySettings, new: HamsterySettings):
         for field in self.fields:
-            if getattr(old, field, '') != getattr(new, field, ''):
+            if getattr(old, field) != getattr(new, field):
                 return True
         return False
 
