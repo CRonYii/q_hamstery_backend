@@ -47,7 +47,6 @@ class TvStorageView(viewsets.ModelViewSet):
 class TvShowView(viewsets.GenericViewSet):
     queryset = TvShow.objects.all()
     serializer_class = TvShowSerializer
-    pagination_class = HamsteryPaginator
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['lib', 'storage']
     search_fields = ['name']
@@ -124,7 +123,9 @@ class TvSeasonView(viewsets.GenericViewSet):
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
     serializer_class = TvEpisodeSerializer
-    filterset_fields = ['season']
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['season', 'air_date']
+    ordering_fields = ['id', 'episode_number', 'air_date']
 
     @action(methods=['post'], detail=True)
     def download(self, request, pk=None):
