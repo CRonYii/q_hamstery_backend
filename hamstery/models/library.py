@@ -176,9 +176,8 @@ class TvShowManager(models.Manager):
 class TvShow(models.Model):
     storage = models.ForeignKey(
         TvStorage, related_name='shows', on_delete=models.CASCADE, parent_link=True)
-    # TODO: Fix blank and null (with a proper upgrading/downgrading mechanisim)
     lib = models.ForeignKey(
-        TvLibrary, related_name='shows', on_delete=models.CASCADE, parent_link=True, blank=True, null=True)
+        TvLibrary, related_name='shows', on_delete=models.CASCADE, parent_link=True)
     tmdb_id = models.IntegerField()
     name = models.CharField(max_length=256)
     path = models.CharField(max_length=4096, db_index=True)
