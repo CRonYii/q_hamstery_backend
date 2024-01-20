@@ -36,30 +36,13 @@ class TvShowSerializer(serializers.ModelSerializer):
                   'number_of_seasons', 'poster_path', 'air_date')
 
 
-class EmbeddedTvShowSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TvShow
-        fields = ('id', 'tmdb_id', 'name', 'number_of_episodes',
-                  'number_of_seasons', 'poster_path', 'air_date')
-
-
 class TvStorageSerializer(serializers.ModelSerializer):
-    shows = EmbeddedTvShowSerializer(many=True, read_only=True)
-
     class Meta:
         model = TvStorage
         fields = ('id', 'lib', 'path', 'shows')
 
 
-class EmbeddedStorageSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = TvStorage
-        fields = ('id', 'lib', 'path')
-
-
 class TvLibrarySerializer(serializers.ModelSerializer):
-    storages = EmbeddedStorageSerializer(many=True, read_only=True)
     class Meta:
         model = TvLibrary
         fields = ('id', 'name', 'lang', 'storages')
