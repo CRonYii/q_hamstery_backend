@@ -1,10 +1,10 @@
+import django_filters
 from asgiref.sync import async_to_sync
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .general import HamsteryPaginator
 from ..forms import DownloadForm, ImportForm, SeasonSearchForm, TMDBForm
 from ..models import Indexer, TvEpisode, TvLibrary, TvSeason, TvShow, TvStorage
 from ..serializers import (TvEpisodeSerializer, TvLibrarySerializer,
@@ -120,11 +120,17 @@ class TvSeasonView(viewsets.GenericViewSet):
         data['warn_removed'] = season.is_warn_removed()
         return data
 
+class TvEpisodeFilter(FilterSet):
+    on_air = django_filters.DateFilter(field_name="air_date", lookup_expr='lte')
+    class Meta:
+        model = TvEpisode
+        fields = ['season', 'on_air']
+
 class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
     queryset = TvEpisode.objects.all()
     serializer_class = TvEpisodeSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['season', 'air_date']
+    filterset_class = TvEpisodeFilter
     ordering_fields = ['id', 'episode_number', 'air_date']
 
     @action(methods=['post'], detail=True)
