@@ -193,7 +193,7 @@ def validate_params(Form: forms.Form):
     return _wrapped_api
 
 
-VIDEO_FILE_RE = re.compile(r'.*?\.(mp4|mkv|flv|avi|rmvb|m4p|m4v)$')
+VIDEO_FILE_RE = re.compile(r'.*?\.(mp4|mkv|flv|avi|rmvb|m4p|m4v|m2ts|ts)$')
 
 
 def is_video_extension(name):
