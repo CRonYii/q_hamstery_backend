@@ -16,3 +16,4 @@ db.sqlite3
 static/
 
 build_scripts/
+dev_output/

@@ -2,6 +2,7 @@ import aiohttp
 import logging
 
 from .utils import Result, failure, success
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +27,24 @@ def tmdb_search_tv_shows(query, lang=None, year=None):
     return tmdb_api_request('https://api.themoviedb.org/3/search/tv',
                             {'query': query, 'language': lang, 'first_air_date_year': year})
 
+@async_to_sync
+async def tmdb_search_tv_shows_sync(query, lang=None, year=None):
+    return await tmdb_search_tv_shows(query, lang, year)
+
 
 def tmdb_tv_show_details(id: int, lang=None):
     return tmdb_api_request('https://api.themoviedb.org/3/tv/%d' % id,
                             {'language': lang})
 
+@async_to_sync
+async def tmdb_tv_show_details_sync(id: int, lang=None):
+    return await tmdb_tv_show_details(id, lang)
+
 
 def tmdb_tv_season_details(id: int, season_number, lang=None):
     return tmdb_api_request('https://api.themoviedb.org/3/tv/%d/season/%d' % (id, season_number),
                             {'language': lang})
+
+@async_to_sync
+async def tmdb_tv_season_details_sync(id: int, season_number, lang=None):
+    return await tmdb_tv_season_details(id, season_number, lang)
