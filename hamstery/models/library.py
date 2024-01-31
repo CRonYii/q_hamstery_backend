@@ -550,7 +550,7 @@ class TvEpisode(models.Model):
                 sup_file = os.path.join(p, f)
                 _, sup_ext = os.path.splitext(f)
                 try:
-                    import_single_file(sup_file, os.path.join(self.get_folder(), "%s.%s" % (final_basename, sup_ext)))
+                    import_single_file(sup_file, os.path.join(self.get_folder(), "%s%s" % (final_basename, sup_ext)))
                 except OSError as e:
                     logger.warn('Error when importing supplemental file "%s": %s' % (sup_file, str(e)))
         self.path = pathstr
