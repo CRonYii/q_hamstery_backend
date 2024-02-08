@@ -25,6 +25,7 @@ class FileTree:
     def __init__(self):
         self.data = {
             'type': 'dir',
+            'entries': {},
         }
 
     def add_file(self, filename: str, meta: dict):
@@ -33,7 +34,7 @@ class FileTree:
         parents.reverse()
         basename = path.name
         data = self.locate_dir(self.data, parents)
-        data[basename] = {
+        data['entries'][basename] = {
             'type': 'file',
             **meta,
         }
@@ -43,11 +44,12 @@ class FileTree:
         if key == '':
             dir_data = data
         else:
-            if key not in data:
-                data[key] = {
+            if key not in data['entries']:
+                data['entries'][key] = {
                     'type': 'dir',
+                    'entries': {},
                 }
-            dir_data = data[key]
+            dir_data = data['entries'][key]
         if len(keys) == 1:
             return dir_data
         return self.locate_dir(dir_data, keys[1:])
