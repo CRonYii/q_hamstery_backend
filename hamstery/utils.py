@@ -200,7 +200,7 @@ def is_video_extension(name):
     return VIDEO_FILE_RE.match(name)
 
 
-SUPPLEMENTAL_FILE_RE = re.compile(r'.*?\.(ass|ssa|srt|idx|sub|mka)$')
+SUPPLEMENTAL_FILE_RE = re.compile(r'.*?\.(ass|ssa|srt|idx|sub|mka|flac)$')
 
 
 def is_supplemental_file_extension(name):
@@ -217,6 +217,34 @@ def list_supplemental_file(src):
     original_name, _ = os.path.splitext(os.path.basename(src))
     for res in filter(lambda f: is_supplemental_file(original_name, f[1]), files):
         yield res
+
+special_supplemental_ext = {
+    # Chinese
+    'zh': '.zh',
+    'sc': '.zh-CN',
+    'tc': '.zh-TW',
+    'chs': '.zh-CN',
+    'cht': '.zh-TW',
+    'gb': '.zh-CN',
+    'big5': '.zh-TW',
+    # Japanese
+    'ja': '.ja',
+    'jp': '.ja',
+    'jpn': '.ja',
+    # English
+    'en': '.en',
+    'eng': '.en',
+}
+
+supported_langcode_separator = ['.', '-', '_']
+
+def get_supplemental_file_ext(name):
+    name, sup_ext = os.path.splitext(name)
+    name: str = name.lower()
+    for key in special_supplemental_ext.keys():
+        if name.endswith(key) and name[-len(key)-1] in supported_langcode_separator:
+            return special_supplemental_ext[key] + sup_ext
+    return sup_ext
 
 
 EPISODE_NUMBER_RE = [

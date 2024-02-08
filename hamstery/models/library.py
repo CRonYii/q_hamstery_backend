@@ -18,7 +18,7 @@ from hamstery.plex import plex_manager
 from hamstery.tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
                            tmdb_tv_show_details)
 from hamstery.utils import (failure, get_episode_number_from_title,
-                            get_valid_filename, list_supplemental_file,
+                            get_valid_filename, list_supplemental_file, get_supplemental_file_ext,
                             is_video_extension, list_dir, success,
                             tree_media, validate_directory_exist, value_or)
 
@@ -548,7 +548,7 @@ class TvEpisode(models.Model):
             final_basename, _ = os.path.splitext(os.path.basename(pathstr))
             for [p, f] in list_supplemental_file(src):
                 sup_file = os.path.join(p, f)
-                _, sup_ext = os.path.splitext(f)
+                sup_ext = get_supplemental_file_ext(f)
                 try:
                     import_single_file(sup_file, os.path.join(self.get_folder(), "%s%s" % (final_basename, sup_ext)))
                 except OSError as e:
