@@ -100,7 +100,7 @@ class TvSeasonView(viewsets.GenericViewSet):
 
     @action(methods=['post'], detail=True)
     def scan(self, request, pk=None):
-        season: TvSeason = TvSeason.objects.get(pk=pk)
+        season: TvSeason = TvSeason.objects.prefetch_related('show').get(pk=pk)
         season.show.storage.lib  # pre-fetch lib here
         return season.scan().into_response()
     
