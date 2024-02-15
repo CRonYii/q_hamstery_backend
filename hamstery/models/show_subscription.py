@@ -37,6 +37,7 @@ class ShowSubscription(models.Model):
             self.save()
             return
         from hamstery.models import MonitoredTvDownload
+        self.season.show # pre-fetch show here
         self.season.scan()
         results = self.season.search_episodes_from_indexer(
             self.query, self.indexer, self.offset, self.exclude)
