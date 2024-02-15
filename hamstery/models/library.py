@@ -3,7 +3,6 @@ import errno
 import logging
 import os
 import re
-import shutil
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -18,8 +17,10 @@ from hamstery.plex import plex_manager
 from hamstery.tmdb import (tmdb_search_tv_shows, tmdb_tv_season_details,
                            tmdb_tv_show_details)
 from hamstery.utils import (failure, get_episode_number_from_title,
-                            get_valid_filename, list_supplemental_file, get_supplemental_file_ext,
-                            is_video_extension, list_dir, success,
+                            get_numbered_filename, get_supplemental_file_ext,
+                            get_valid_filename, import_single_file,
+                            is_supplemental_file_extension, is_video_extension,
+                            list_dir, list_supplemental_file, success,
                             tree_media, validate_directory_exist, value_or)
 
 logger = logging.getLogger(__name__)
@@ -508,19 +509,14 @@ class TvEpisode(models.Model):
         return True
 
     def import_video(self, pathstr: str, manually: bool, mode='move') -> bool:
+        if self.status != TvEpisode.Status.MISSING:
+            return False
         path = Path(pathstr)
         season_folder = Path(self.get_folder())
         if not path.exists() or not path.is_file() or not is_video_extension(pathstr):
             logger.warn('Attempt to import invalid file: %s' % pathstr)
             return False
         if season_folder not in path.parents:
-            def import_single_file(src, dst):
-                if mode == 'symlink':
-                    os.symlink(src, dst)
-                elif mode == 'move':
-                    shutil.move(src, dst)
-                else:
-                    os.link(src, dst)
             # Need to first move the file to season folder and rename
             src = pathstr
             names = [
@@ -533,7 +529,7 @@ class TvEpisode(models.Model):
             for name in names:
                 pathstr = os.path.join(self.get_folder(), name)
                 try:
-                    import_single_file(src, pathstr)
+                    import_single_file(src, pathstr, mode)
                     done = True
                     break
                 except OSError as e:
@@ -549,8 +545,13 @@ class TvEpisode(models.Model):
             for [p, f] in list_supplemental_file(src):
                 sup_file = os.path.join(p, f)
                 sup_ext = get_supplemental_file_ext(f)
+                dst_sup_file_path = os.path.join(self.get_folder(), "%s%s" % (final_basename, sup_ext))
+                dst_sup_file_path = get_numbered_filename(dst_sup_file_path)
+                if dst_sup_file_path is None:
+                    # Same file already exists, skip
+                    continue
                 try:
-                    import_single_file(sup_file, os.path.join(self.get_folder(), "%s%s" % (final_basename, sup_ext)))
+                    import_single_file(sup_file, dst_sup_file_path, mode)
                 except OSError as e:
                     logger.warn('Error when importing supplemental file "%s": %s' % (sup_file, str(e)))
         self.path = pathstr
@@ -558,6 +559,27 @@ class TvEpisode(models.Model):
         if manually is True:
             self.cancel_related_downloads('downloading')
         plex_manager.refresh_plex_library_by_filepath(self.get_folder())
+        return True
+    
+    def import_supplemental(self, pathstr: str, mode='move') -> bool:
+        if self.status != TvEpisode.Status.READY:
+            return False
+        sup_file = Path(pathstr)
+        if not sup_file.exists() or not sup_file.is_file() or not is_supplemental_file_extension(pathstr):
+            logger.warn('Attempt to import invalid supplemental file: %s' % pathstr)
+            return False
+        final_folder = os.path.dirname(self.path)
+        final_basename, _ = os.path.splitext(os.path.basename(self.path))
+        sup_ext = get_supplemental_file_ext(pathstr)
+        dst_sup_file_path = os.path.join(final_folder, "%s%s" % (final_basename, sup_ext))
+        dst_sup_file_path = get_numbered_filename(pathstr, dst_sup_file_path)
+        if dst_sup_file_path is None:
+            # Same file already exists, skip
+            return True
+        try:
+            import_single_file(sup_file, dst_sup_file_path, mode)
+        except OSError as e:
+            logger.warn('Error when importing supplemental file "%s": %s' % (sup_file, str(e)))
         return True
 
     def cancel_related_downloads(self, type: str):
@@ -605,8 +627,7 @@ class TvEpisode(models.Model):
     def download_by_url(self, urls):
         if self.is_manually_ready():
             return False
-        from ..qbt_monitor import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
-                                   qbt)
+        from ..qbt_monitor import HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG, qbt
         res = qbt.client.torrents_add(
             urls=urls,
             rename=self.id,
@@ -621,8 +642,7 @@ class TvEpisode(models.Model):
     def download_by_torrents(self, torrents):
         if self.is_manually_ready():
             return False
-        from ..qbt_monitor import (HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG,
-                                   qbt)
+        from ..qbt_monitor import HAMSTERY_CATEGORY, UNSCHEDULED_TV_TAG, qbt
         res = qbt.client.torrents_add(
             torrent_files=torrents,
             rename=self.id,

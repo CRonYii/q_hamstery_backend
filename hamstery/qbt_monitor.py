@@ -220,7 +220,8 @@ def handle_downloading_tv_task(task):
     download.save()
 
     src_path = os.path.join(task['save_path'], download.filename)
-    episode.import_video(src_path, manually=(not monitored_task), mode='link')
+    if not episode.import_video(src_path, manually=(not monitored_task), mode='link'):
+        return failure('Failed to import TV download')
     episode.save()
 
     return success('TV organized')

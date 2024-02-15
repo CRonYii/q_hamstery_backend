@@ -163,6 +163,19 @@ class TvEpisodeView(viewsets.ReadOnlyModelViewSet):
         else:
             return Response('Invalid import', status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=True)
+    def local_import_supplemental(self, request, pk=None):
+        episode: TvEpisode = self.get_object()
+        form = ImportForm(request.POST)
+        if not form.is_valid():
+            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+        path = form.cleaned_data['path']
+        mode = form.cleaned_data['mode'] or 'move'
+        if episode.import_supplemental(path, mode=mode) is True:
+            return Response('Ok')
+        else:
+            return Response('Invalid import', status=status.HTTP_400_BAD_REQUEST)
+
     @action(methods=['delete'], detail=True)
     def remove(self, request, pk=None):
         episode: TvEpisode = self.get_object()

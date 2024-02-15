@@ -1,7 +1,9 @@
 import base64
+import filecmp
 import json
 import os
 import re
+import shutil
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
@@ -258,8 +260,8 @@ EPISODE_NUMBER_RE = [
 
 
 def get_episode_number_from_title(title: str, force_local=False) -> int:
-    from hamstery.models.settings import HamsterySettings
     from hamstery.hamstery_settings import settings_manager
+    from hamstery.models.settings import HamsterySettings
     from hamstery.openai import openai_manager
     settings = settings_manager.settings
     if not force_local and settings.openai_title_parser_mode == HamsterySettings.TitleParserMode.PRIMARY:
@@ -294,3 +296,24 @@ def get_episode_number_from_title(title: str, force_local=False) -> int:
 
 def get_valid_filename(s: str) -> str:
     return re.sub(r"(?u)[^-\w.]", "", s)
+
+def import_single_file(src, dst, mode):
+    if mode == 'symlink':
+        os.symlink(src, dst)
+    elif mode == 'move':
+        shutil.move(src, dst)
+    elif mode == 'link':
+        os.link(src, dst)
+
+def get_numbered_filename(src, dst):
+    number = 1
+    name, ext = os.path.splitext(dst)
+    while True:
+        if not Path(dst).exists():
+            break
+        if filecmp.cmp(src, dst):
+            return None
+        dst = "%s.%d%s" % (name, number, ext)
+        number += 1
+
+    return dst
