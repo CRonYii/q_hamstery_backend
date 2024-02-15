@@ -166,7 +166,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'app_data/hamstery.log',
             'encoding': 'utf8',
-            'maxBytes': 1048576,  # 1024 * 1024 * 10B = 10MB
+            'maxBytes': 10485760,  # 1024 * 1024 * 10B = 10MB
             'backupCount': 2,
             'formatter': 'verbose',
         },
