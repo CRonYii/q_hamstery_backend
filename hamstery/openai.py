@@ -13,8 +13,20 @@ from hamstery.models.stats import HamsteryStats
 
 logger = logging.getLogger(__name__)
 
+# Will only support specific models (Need JSON Mode)
+# Do not add model pointers like 'gpt-3.5-turbo' since those are subject to change
+supported_models = [
+    'gpt-4-0125-preview', # 2024-01-25
+    'gpt-4-1106-preview', # 2023-11-06
+    'gpt-3.5-turbo-0125', # 2024-01-25
+    'gpt-3.5-turbo-1106', # 2023-11-06
+]
+
 def is_supported_model(model: Model):
-    return ('gpt-4-1106-preview' in model.id) or ('gpt-3.5-turbo-1106' in model.id)
+    for id in supported_models:
+        if id in model.id: # to support fine-tuned models
+            return True
+    return False
 
 class OpenAIManager:
 
