@@ -546,7 +546,7 @@ class TvEpisode(models.Model):
                 sup_file = os.path.join(p, f)
                 sup_ext = get_supplemental_file_ext(f)
                 dst_sup_file_path = os.path.join(self.get_folder(), "%s%s" % (final_basename, sup_ext))
-                dst_sup_file_path = get_numbered_filename(dst_sup_file_path)
+                dst_sup_file_path = get_numbered_filename(sup_file, dst_sup_file_path)
                 if dst_sup_file_path is None:
                     # Same file already exists, skip
                     continue
